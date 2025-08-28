@@ -1,0 +1,517 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Валютный контроль — финальная сборка</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0a;--card:#101012;--muted:#b8b8b8;--gold:#d4af37;--gold2:#ffde77;--ok:#2fd27a;--bad:#ff5d5d;--process:#ffc107;}
+*{box-sizing:border-box} body{margin:0;background:#0a0a0a;color:#f5f5f5;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+.container{width:min(1200px,92vw);margin:0 auto}
+header{position:sticky;top:0;z-index:60;background:rgba(10,10,10,.9);backdrop-filter:blur(8px);border-bottom:1px solid rgba(212,175,55,.22)}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:12px 0}
+.brand{font-family:Montserrat;font-weight:800;display:flex;gap:10px;align-items:center}
+.btn{appearance:none;border:1px solid rgba(212,175,55,.35);background:rgba(212,175,55,.1);color:#fff;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+.btn.primary{background:linear-gradient(90deg,rgba(212,175,55,.22),rgba(255,222,119,.18))}
+.hidden{display:none !important}
+.section-title{font-family:Montserrat;font-weight:800;display:flex;gap:8px;align-items:center;margin:0 0 12px;font-size:24px}
+.bar{width:6px;height:18px;background:linear-gradient(180deg,var(--gold),var(--gold2));border-radius:2px}
+.subtle{color:#d8d8d8}
+.grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.00));border:1px solid rgba(212,175,55,.18);border-radius:14px;padding:14px}
+
+/* Hero / Procedure */
+.hero{padding:22px 0 6px}
+.procedure{padding:8px 0 18px}
+.step-list{margin:6px 0 0; padding-left:18px}
+.step-list li{margin:6px 0}
+
+/* News */
+.news{padding:8px 0 20px}
+.news-card{grid-column:span 4; border:1px solid rgba(212,175,55,.22); border-radius:14px; padding:12px; background:rgba(255,255,255,.02)}
+.news-card h4{margin:0 0 6px; font-weight:800}
+.news-meta{font-size:12px; color:#ccc; margin-bottom:6px}
+@media(max-width:980px){.news-card{grid-column:span 6}}
+
+/* Firms visual */
+.toolbar{display:flex;gap:12px;align-items:center;margin:8px 0 12px;flex-wrap:wrap}
+.search{flex:1;display:flex;gap:8px;align-items:center;border:1px solid rgba(212,175,55,.3);padding:10px;border-radius:12px;background:rgba(212,175,55,.06)}
+.search input{flex:1;border:none;background:transparent;color:#fff;outline:none}
+#firms{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+#firms > *{grid-column:span 6;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.00));border:1px solid rgba(212,175,55,.18);border-radius:14px;padding:14px;position:relative}
+.status-pill{position:absolute;top:8px;right:10px;font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;border:1px solid;background:rgba(0,0,0,.25)}
+.pill-ok{color:#19d36e;border-color:#19d36e;background:rgba(25,211,110,.12)}
+.pill-bad{color:#ff9a9a;border-color:#ff7e7e;background:rgba(255,93,93,.12)}
+#firms > *.available{border-color:rgba(47,210,122,.55);background:linear-gradient(180deg,rgba(47,210,122,.10),rgba(47,210,122,.04))}
+.lawyers{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid rgba(212,175,55,.32);background:rgba(212,175,55,.08)}
+.firm-title{font-weight:700; font-family:Montserrat}
+.country{color:#bbb; font-size:13px}
+@media(max-width:980px){#firms > *{grid-column:span 12}}
+
+/* Cabinet/Admin */
+.main{padding:24px 0}
+.form-section{background:var(--card);border:1px solid rgba(212,175,55,.22);border-radius:16px;padding:20px;margin:16px auto;width:min(760px,92vw)}
+.field{display:grid;gap:6px;margin-bottom:10px}
+.input,.textarea,.select{background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.30);border-radius:10px;padding:10px 12px;color:#fff;outline:none}
+.file-preview{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap}
+.file-preview img{max-width:150px;max-height:150px;border-radius:8px;border:1px solid rgba(212,175,55,.5);object-fit:cover}
+.status-badge{font-weight:700;padding:4px 8px;border-radius:6px;color:#fff}
+.status-ok{background:var(--ok)}.status-process{background:var(--process)}.status-bad{background:var(--bad)}
+.admin-claims-list{display:grid;gap:12px}
+.admin-claim-card{background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.28);border-radius:14px;padding:14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+
+/* Modals */
+.modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.92);z-index:1000}
+.modal.show{display:grid}
+.box{width:min(520px,92vw);background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid rgba(212,175,55,.28);border-radius:16px;padding:18px;position:relative}
+.close-btn{position:absolute;top:8px;right:12px;font-size:24px;background:transparent;border:none;color:#fff;cursor:pointer}
+.claim-modal-box{width:min(900px,95vw);max-height:95vh;overflow:auto}
+</style>
+</head>
+<body>
+<header>
+  <div class="container nav">
+    <div class="brand">Валютный контроль</div>
+    <div>
+      <button id="btnHome" class="btn">Главная</button>
+      <button id="btnAdmin" class="btn">Админ</button>
+      <button id="btnLogin" class="btn">Войти</button>
+      <button id="btnRegister" class="btn primary">Регистрация</button>
+      <button id="btnCabinet" class="btn primary hidden">Личный кабинет</button>
+      <button id="btnLogout" class="btn hidden">Выйти</button>
+    </div>
+  </div>
+</header>
+
+<main id="homeView">
+  <section class="container hero">
+    <h2 class="section-title"><span class="bar"></span> Валютный контроль и процедура Detrac Recovery</h2>
+    <div class="card subtle">
+      <p><b>Валютный контроль</b> — проверка документов и маршрута платежа, соответствие требованиям регулятора и банка.</p>
+      <p><b>Detrac Recovery</b> — возврат средств по спорным международным операциям при нарушениях или мошенничестве.</p>
+    </div>
+  </section>
+
+  <section class="container procedure">
+    <h2 class="section-title"><span class="bar"></span> Описание процедуры</h2>
+    <div class="grid12">
+      <div class="card" style="grid-column:span 6">
+        <h3 class="firm-title">Этапы валютного контроля</h3>
+        <ol class="step-list">
+          <li>Анализ договора/инвойса и бенефициаров.</li>
+          <li>Проверка маршрута (SWIFT/коррсчёт), стран‑риск‑факторов.</li>
+          <li>Сбор подтверждающих документов и KYC/AML.</li>
+          <li>Формирование пакета для банка/платёжной системы.</li>
+          <li>Мониторинг статуса операции и фиксация переписки.</li>
+        </ol>
+      </div>
+      <div class="card" style="grid-column:span 6">
+        <h3 class="firm-title">Этапы Detrac Recovery</h3>
+        <ol class="step-list">
+          <li>Регистрация заявления и сбор доказательств (чеки, скриншоты, переписка).</li>
+          <li>Техническая трассировка платежа, запросы провайдерам.</li>
+          <li>Юридические требования к получателю и посредникам.</li>
+          <li>Эскалация в банк/платёжную систему и регулятора.</li>
+          <li>Получение компенсации или блокирование остатка средств.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="container news">
+    <h2 class="section-title"><span class="bar"></span> Новости о мошенничестве</h2>
+    <div class="grid12" id="newsList">
+      <article class="news-card"><div class="news-meta">27.08.2025 · межбанк</div><h4>Подмена реквизитов в инвойсах</h4><p>Атаки через перехват почты и «инвойс‑ботов». Сверяйте реквизиты по независимому каналу.</p></article>
+      <article class="news-card"><div class="news-meta">25.08.2025 · SWIFT</div><h4>Фальшивые PDF‑подтверждения</h4><p>Проверяйте MT103 через банк, не полагайтесь на скриншоты.</p></article>
+      <article class="news-card"><div class="news-meta">22.08.2025 · карты</div><h4>Ложные «refund» после спора</h4><p>Злоумышленники маскируют возврат. Храните исходные документы и переписку.</p></article>
+      <article class="news-card"><div class="news-meta">20.08.2025 · P2P</div><h4>«Налог за разблокировку»</h4><p>Любые доплаты за «разморозку» — красный флаг. Уточняйте у банка.</p></article>
+      <article class="news-card"><div class="news-meta">18.08.2025 · крипта</div><h4>Псевдо‑автотрейдинг</h4><p>Обещают доход без риска и просят депозит. Проверяйте лицензии.</p></article>
+      <article class="news-card"><div class="news-meta">16.08.2025 · мерчанты</div><h4>Смена домена после оплаты</h4><p>Сохраняйте URL/квитанции — это упрощает Detrac.</p></article>
+      <article class="news-card"><div class="news-meta">13.08.2025 · соцсети</div><h4>«Саппорт банка» просит OTP</h4><p>Никому не передавайте одноразовые коды.</p></article>
+      <article class="news-card"><div class="news-meta">10.08.2025 · брокеры</div><h4>Ложные «комплайнс‑чеки»</h4><p>Требуют оплату «за проверку личности» — предлог для перевода.</p></article>
+    </div>
+  </section>
+
+  <section class="container" style="padding:8px 0 18px">
+    <h2 class="section-title"><span class="bar"></span> Юридические партнёры</h2>
+    <div class="toolbar">
+      <div class="search"><input id="firmSearch" placeholder="Поиск по названию или стране…"></div>
+      <label><input type="checkbox" id="onlyAvail"> Показывать только доступных</label>
+      <span class="subtle">Interlex и BS — есть свободные юристы</span>
+    </div>
+    <div id="firms">
+      
+<article class="firm-card available" data-country="Латвия" data-name="ООО Interlex">
+<div class="firm-head">
+<div>
+<div class="firm-name">ООО «Interlex»</div>
+<div class="country">страна: Латвия</div>
+</div>
+<span class="badge available" title="есть свободные юристы">есть свободные юристы</span>
+</div>
+<details>
+<summary>Команда юристов Interlex (10)</summary>
+<div class="lawyers">
+<span class="chip">Анна Петрова</span>
+<span class="chip">Елена Кравцева</span>
+<span class="chip">Мария Озолиня</span>
+<span class="chip">Оксана Гринберг</span>
+<span class="chip">Наталья Соколова</span>
+<span class="chip">Алексей Руденко</span>
+<span class="chip">Сергей Мельник</span>
+<span class="chip">Дмитрий Круминьш</span>
+<span class="chip">Игорь Новицкий</span>
+<span class="chip">Андрей Иванов</span>
+</div>
+</details>
+</article>
+<article class="firm-card available" data-country="Казахстан" data-name="ООО BS">
+<div class="firm-head">
+<div>
+<div class="firm-name">ООО «BS»</div>
+<div class="country">страна: Казахстан</div>
+</div>
+<span class="badge available" title="есть свободные юристы">есть свободные юристы</span>
+</div>
+<details>
+<summary>Команда юристов BS (10)</summary>
+<div class="lawyers">
+<span class="chip">Айгуль Исаева</span>
+<span class="chip">Ольга Гудеева</span>
+<span class="chip">Азамат Саяжанов</span>
+<span class="chip">Андрей Дронов</span>
+<span class="chip">Ярослав Котов</span>
+<span class="chip">Денис Вавилов</span>
+<span class="chip">Диана Денисова</span>
+<span class="chip">Адам Куликов</span>
+<span class="chip">Дмитрий Смирнов</span>
+<span class="chip">Евгений Спиченко</span>
+</div>
+</details>
+</article>
+<article class="firm-card unavailable" data-country="Польша" data-name="ООО LexGuard">
+<div class="firm-head"><div><div class="firm-name">ООО «LexGuard»</div><div class="country">страна: Польша</div></div><span class="badge unavailable">нет свободных юристов</span></div>
+</article>
+<article class="firm-card unavailable" data-country="Литва" data-name="ООО JusPrime"><div class="firm-head"><div><div class="firm-name">ООО «JusPrime»</div><div class="country">страна: Литва</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Эстония" data-name="ООО Nordic Counsel"><div class="firm-head"><div><div class="firm-name">ООО «Nordic Counsel»</div><div class="country">страна: Эстония</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Австрия" data-name="ООО Danube Legal"><div class="firm-head"><div><div class="firm-name">ООО «Danube Legal»</div><div class="country">страна: Австрия</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Швейцария" data-name="ООО AlpLex"><div class="firm-head"><div><div class="firm-name">ООО «AlpLex»</div><div class="country">страна: Швейцария</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Латвия" data-name="ООО Baltic Juris"><div class="firm-head"><div><div class="firm-name">ООО «Baltic Juris»</div><div class="country">страна: Латвия</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Испания" data-name="ООО Iberia Law"><div class="firm-head"><div><div class="firm-name">ООО «Iberia Law»</div><div class="country">страна: Испания</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Италия" data-name="ООО TransAlp Law"><div class="firm-head"><div><div class="firm-name">ООО «TransAlp Law»</div><div class="country">страна: Италия</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Германия" data-name="ООО Rhein Rechts"><div class="firm-head"><div><div class="firm-name">ООО «Rhein Rechts»</div><div class="country">страна: Германия</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Великобритания" data-name="ООО Blue Thames"><div class="firm-head"><div><div class="firm-name">ООО «Blue Thames»</div><div class="country">страна: Великобритания</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Франция" data-name="ООО Gaul Lex"><div class="firm-head"><div><div class="firm-name">ООО «Gaul Lex»</div><div class="country">страна: Франция</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Румыния" data-name="ООО Carpathia Legal"><div class="firm-head"><div><div class="firm-name">ООО «Carpathia Legal»</div><div class="country">страна: Румыния</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Сербия" data-name="ООО Balkan Counsel"><div class="firm-head"><div><div class="firm-name">ООО «Balkan Counsel»</div><div class="country">страна: Сербия</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Греция" data-name="ООО Hellas Juris"><div class="firm-head"><div><div class="firm-name">ООО «Hellas Juris»</div><div class="country">страна: Греция</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Турция" data-name="ООО Anatolia Legal"><div class="firm-head"><div><div class="firm-name">ООО «Anatolia Legal»</div><div class="country">страна: Турция</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Азербайджан" data-name="ООО Caspian Partners"><div class="firm-head"><div><div class="firm-name">ООО «Caspian Partners»</div><div class="country">страна: Азербайджан</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Грузия" data-name="ООО Caucasus Legal"><div class="firm-head"><div><div class="firm-name">ООО «Caucasus Legal»</div><div class="country">страна: Грузия</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Армения" data-name="ООО Ararat Law"><div class="firm-head"><div><div class="firm-name">ООО «Ararat Law»</div><div class="country">страна: Армения</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Узбекистан" data-name="ООО SilkRoad Legal"><div class="firm-head"><div><div class="firm-name">ООО «SilkRoad Legal»</div><div class="country">страна: Узбекистан</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Кыргызстан" data-name="ООО Tian Shan Counsel"><div class="firm-head"><div><div class="firm-name">ООО «Tian Shan Counsel»</div><div class="country">страна: Кыргызстан</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Таджикистан" data-name="ООО Dushanbe Juris"><div class="firm-head"><div><div class="firm-name">ООО «Dushanbe Juris»</div><div class="country">страна: Таджикистан</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Туркменистан" data-name="ООО Ashgabat Legal"><div class="firm-head"><div><div class="firm-name">ООО «Ashgabat Legal»</div><div class="country">страна: Туркменистан</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Польша" data-name="ООО Vistula Law"><div class="firm-head"><div><div class="firm-name">ООО «Vistula Law»</div><div class="country">страна: Польша</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Нидерланды" data-name="ООО Benelux Counsel"><div class="firm-head"><div><div class="firm-name">ООО «Benelux Counsel»</div><div class="country">страна: Нидерланды</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Чехия" data-name="ООО Praha Lex"><div class="firm-head"><div><div class="firm-name">ООО «Praha Lex»</div><div class="country">страна: Чехия</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Словакия" data-name="ООО Slavia Law"><div class="firm-head"><div><div class="firm-name">ООО «Slavia Law»</div><div class="country">страна: Словакия</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Словения" data-name="ООО Adriatic Legal"><div class="firm-head"><div><div class="firm-name">ООО «Adriatic Legal»</div><div class="country">страна: Словения</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Черногория" data-name="ООО Montis Juris"><div class="firm-head"><div><div class="firm-name">ООО «Montis Juris»</div><div class="country">страна: Черногория</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Болгария" data-name="ООО BalkanBridge"><div class="firm-head"><div><div class="firm-name">ООО «BalkanBridge»</div><div class="country">страна: Болгария</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Дания" data-name="ООО NordSea Counsel"><div class="firm-head"><div><div class="firm-name">ООО «NordSea Counsel»</div><div class="country">страна: Дания</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Португалия" data-name="ООО Atlantic Legal"><div class="firm-head"><div><div class="firm-name">ООО «Atlantic Legal»</div><div class="country">страна: Португалия</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Кипр" data-name="ООО Cyprus Trust"><div class="firm-head"><div><div class="firm-name">ООО «Cyprus Trust»</div><div class="country">страна: Кипр</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Израиль" data-name="ООО Levant Legal"><div class="firm-head"><div><div class="firm-name">ООО «Levant Legal»</div><div class="country">страна: Израиль</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="ОАЭ" data-name="ООО Gulf Juris"><div class="firm-head"><div><div class="firm-name">ООО «Gulf Juris»</div><div class="country">страна: ОАЭ</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+<article class="firm-card unavailable" data-country="Сингапур" data-name="ООО Pacific Counsel"><div class="firm-head"><div><div class="firm-name">ООО «Pacific Counsel»</div><div class="country">страна: Сингапур</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+
+    </div>
+  </section>
+</main>
+
+<main id="clientView" class="main hidden">
+  <div id="loginSection" class="form-section">
+    <h2 class="section-title"><span class="bar"></span>Личный кабинет</h2>
+    <div class="field"><label>Ваш E-mail</label><input class="input" id="userEmail" type="email" placeholder="you@example.com"></div>
+    <button class="btn primary" id="loginBtn" type="button">Войти</button>
+  </div>
+
+  <div id="cabinetSection" class="form-section hidden">
+    <p>Добро пожаловать, <b id="cabinet_email"></b></p>
+    <div id="newClaim">
+      <h3 class="section-title"><span class="bar"></span>Подача нового заявления</h3>
+      <div class="field"><label>Ваше ФИО</label><input class="input" id="fio"></div>
+      <div class="field"><label>Сумма ущерба в USD</label><input class="input" id="amount" type="number"></div>
+      <div class="field"><label>Дата происшествия</label><input class="input" id="date" type="date"></div>
+      <div class="field"><label>Способ перевода</label><input class="input" id="method" placeholder="Visa / SWIFT / P2P"></div>
+      <div class="field"><label>Название компании</label><input class="input" id="company"></div>
+      <div class="field"><label>Реквизиты для компенсации</label><input class="input" id="account_bank"></div>
+      <div class="field"><label>Документы (чеки/скриншоты)</label><input class="input" type="file" id="files" multiple></div>
+      <div id="uploadProgress" class="hidden">Загрузка: 0%</div>
+      <button class="btn primary" id="sendClaimBtn" type="button">Отправить заявление</button>
+    </div>
+
+    <div id="currentClaim" class="hidden">
+      <h3 class="section-title"><span class="bar"></span>Ваша заявка</h3>
+      <p><b>Статус:</b> <span id="cabinet_status" class="status-badge"></span></p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><p><b>ID:</b> <span id="claimId"></span></p><p><b>Сумма:</b> <span id="claimAmount"></span></p><p><b>Дата:</b> <span id="claimDate"></span></p></div>
+        <div><p><b>Метод:</b> <span id="claimMethod"></span></p><p><b>Компания:</b> <span id="claimCompany"></span></p><p><b>Счёт:</b> <span id="claimAccount"></span></p></div>
+      </div>
+      <h4>Ваши документы</h4><div id="clientDocs" class="file-preview"></div>
+      <h4 style="margin-top:10px">Документы от администратора</h4><div id="adminDocsClient" class="file-preview"></div>
+      <h4 style="margin-top:10px">История</h4><div id="historyListClient" class="file-preview" style="display:block"></div>
+      <button class="btn" id="cancelClaimBtn" type="button">Отозвать</button>
+    </div>
+  </div>
+</main>
+
+<main id="adminView" class="main hidden">
+  <div class="container">
+    <h2 class="section-title"><span class="bar"></span>Админ-панель</h2>
+    <div id="claimsList" class="admin-claims-list"></div>
+  </div>
+</main>
+
+<!-- Auth Modal -->
+<div class="modal" id="authModal">
+  <div class="box">
+    <button class="close-btn" id="closeAuth">&times;</button>
+    <h3 id="authTitle">Регистрация</h3>
+    <div class="field" id="fldName"><label>Имя</label><input class="input" id="authName"></div>
+    <div class="field"><label>E-mail</label><input class="input" id="authEmail" type="email"></div>
+    <div class="field"><label>Пароль</label><input class="input" id="authPassword" type="password"></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+      <button class="btn primary" id="authSubmit" type="button">Продолжить</button>
+      <button class="btn" id="authCancel" type="button">Отмена</button>
+      <span id="authHint" style="margin-left:auto;font-size:12px;color:#ccc">Уже есть аккаунт? <a href="#" id="toLogin">Войти</a></span>
+    </div>
+  </div>
+</div>
+
+<!-- Admin login -->
+<div class="modal" id="loginModal">
+  <div class="box">
+    <button class="close-btn" id="closeAdminLogin">&times;</button>
+    <h3>Вход для администратора</h3>
+    <div class="field"><label>E-mail</label><input class="input" id="adminEmail"></div>
+    <div class="field"><label>Пароль</label><input class="input" id="adminPassword" type="password"></div>
+    <button class="btn primary" id="adminLoginBtn" type="button">Войти</button>
+  </div>
+</div>
+
+<!-- Claim details modal -->
+<div class="modal" id="claimModal"><div class="box claim-modal-box"><button class="close-btn" id="closeClaimModal">&times;</button><div id="claimDetails"></div></div></div>
+
+<script>
+// ---- Helpers ----
+const qs = s => document.querySelector(s); const qsa = s => Array.from(document.querySelectorAll(s));
+function getUsers(){ try {return JSON.parse(localStorage.getItem('users')||'[]')} catch(e){return []} }
+function setUsers(a){ localStorage.setItem('users', JSON.stringify(a||[])) }
+function getCurrentUser(){ try {return JSON.parse(localStorage.getItem('currentUser'))} catch(e){return null} }
+function setCurrentUser(u){ if(u) localStorage.setItem('currentUser', JSON.stringify(u)); else localStorage.removeItem('currentUser'); syncHeader(); }
+function getAllClaims(){ try {return JSON.parse(localStorage.getItem('allClaims')||'[]')} catch(e){return []} }
+function setAllClaims(a){ localStorage.setItem('allClaims', JSON.stringify(a||[])) }
+function statusClass(s){ return (s==='Новое'||s==='В работе'||s==='Требует док.')?'status-process':(s==='Утверждено'?'status-ok':'status-bad') }
+function show(el){ qs('#homeView').classList.add('hidden'); qs('#clientView').classList.add('hidden'); qs('#adminView').classList.add('hidden'); el.classList.remove('hidden'); }
+function syncHeader(){ const u=getCurrentUser(); if(u){ qs('#btnLogin').classList.add('hidden'); qs('#btnRegister').classList.add('hidden'); qs('#btnCabinet').classList.remove('hidden'); qs('#btnLogout').classList.remove('hidden'); } else { qs('#btnLogin').classList.remove('hidden'); qs('#btnRegister').classList.remove('hidden'); qs('#btnCabinet').classList.add('hidden'); qs('#btnLogout').classList.add('hidden'); } }
+qs('#btnHome').onclick=()=>show(qs('#homeView'));
+qs('#btnCabinet').onclick=()=>{ show(qs('#clientView')); showCabinet(); }
+qs('#btnLogout').onclick=()=>{ setCurrentUser(null); show(qs('#homeView')); };
+
+// ---- Auth ----
+let authMode='register';
+function openAuth(mode){ authMode=mode; qs('#authTitle').textContent=(mode==='login')?'Вход':'Регистрация'; qs('#fldName').style.display=(mode==='login')?'none':''; qs('#authModal').classList.add('show'); qs('#authHint').innerHTML=(mode==='login'?'Нет аккаунта? <a href="#" id="toRegister">Зарегистрироваться</a>':'Уже есть аккаунт? <a href="#" id="toLogin">Войти</a>'); const l=qs('#toRegister')||qs('#toLogin'); if(l) l.onclick=(e)=>{e.preventDefault(); openAuth(mode==='login'?'register':'login');}; }
+qs('#btnLogin').onclick=()=>openAuth('login'); qs('#btnRegister').onclick=()=>openAuth('register');
+qs('#closeAuth').onclick=()=>qs('#authModal').classList.remove('show'); qs('#authCancel').onclick=()=>qs('#authModal').classList.remove('show');
+qs('#authSubmit').onclick=()=>{
+  const email=(qs('#authEmail').value||'').trim().toLowerCase();
+  const pass=(qs('#authPassword').value||'').trim();
+  if(!email||!pass) return alert('Заполните email и пароль');
+  const users=getUsers();
+  if(authMode==='register'){
+    const name=(qs('#authName').value||'').trim();
+    if(!name) return alert('Заполните имя');
+    if(users.some(u=>u.email===email)) return alert('Пользователь уже существует');
+    users.push({email:email, pass:pass, name:name}); setUsers(users); setCurrentUser({email:email, name:name});
+  } else {
+    const u=users.find(u=>u.email===email && u.pass===pass);
+    if(!u) return alert('Неверные данные');
+    setCurrentUser({email:u.email, name:u.name});
+  }
+  qs('#authModal').classList.remove('show'); show(qs('#clientView')); showCabinet();
+};
+
+// ---- Client cabinet ----
+qs('#loginBtn').onclick=()=>{
+  const email=(qs('#userEmail').value||'').trim().toLowerCase();
+  if(!email) return alert('Введите email');
+  const users=getUsers();
+  if(!users.some(u=>u.email===email)){ users.push({email:email, pass:'', name:''}); setUsers(users); }
+  setCurrentUser({email:email}); show(qs('#clientView')); showCabinet();
+};
+
+function fileToDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
+
+function showCabinet(){
+  const u=getCurrentUser(); const loginSection=qs('#loginSection'), cabinetSection=qs('#cabinetSection'), newClaim=qs('#newClaim'), currentClaim=qs('#currentClaim');
+  if(!u){ loginSection.classList.remove('hidden'); cabinetSection.classList.add('hidden'); return; }
+  loginSection.classList.add('hidden'); cabinetSection.classList.remove('hidden'); qs('#cabinet_email').textContent=u.email;
+  const all=getAllClaims(); const claim=all.find(c=>c.email===u.email);
+  if(claim){
+    newClaim.classList.add('hidden'); currentClaim.classList.remove('hidden');
+    qs('#claimId').textContent=claim.id; qs('#claimAmount').textContent=claim.amount+' USD'; qs('#claimDate').textContent=new Date(claim.date).toLocaleDateString();
+    qs('#claimMethod').textContent=claim.method; qs('#claimCompany').textContent=claim.company||'—'; qs('#claimAccount').textContent=claim.account_bank;
+    const st=qs('#cabinet_status'); st.textContent=claim.status; st.className='status-badge '+statusClass(claim.status);
+    qs('#clientDocs').innerHTML=(claim.files||[]).map(f=>'<a href="'+f.data+'" target="_blank"><img src="'+f.data+'" alt="'+f.name+'"></a>').join('');
+    qs('#adminDocsClient').innerHTML=(claim.adminDocs||[]).map(f=>'<a href="'+f.data+'" target="_blank"><img src="'+f.data+'" alt="'+f.name+'"></a>').join('');
+    qs('#historyListClient').innerHTML=(claim.history||[]).map(h=>'<div class="chip" style="border-style:dashed">'+h.text+' — <span class="subtle">'+new Date(h.date).toLocaleString()+'</span></div>').join('');
+  } else {
+    newClaim.classList.remove('hidden'); currentClaim.classList.add('hidden');
+  }
+}
+
+qs('#sendClaimBtn').onclick=async (e)=>{
+  e.preventDefault(); e.stopPropagation();
+  const u=getCurrentUser(); if(!u) return alert('Сначала войдите');
+  const fio=qs('#fio').value.trim(), amount=qs('#amount').value.trim(), date=qs('#date').value, method=qs('#method').value.trim(), company=qs('#company').value.trim(), account_bank=qs('#account_bank').value.trim();
+  if(!fio||!amount||!date||!method||!account_bank) return alert('Заполните обязательные поля');
+  const files=Array.from(qs('#files').files||[]); let uploaded=[];
+  if(files.length){
+    const prog=qs('#uploadProgress'); prog.classList.remove('hidden');
+    uploaded = await Promise.all(files.map((f,i)=> fileToDataURL(f).then(data=>{ prog.textContent='Загрузка: '+Math.round(((i+1)/files.length)*100)+'%'; return {name:f.name,type:f.type,data:data}; })));
+    prog.classList.add('hidden');
+  }
+  const all=getAllClaims(); if(all.find(c=>c.email===u.email)) return alert('У вас уже есть активная заявка');
+  const claim={ id:'claim_'+Date.now(), email:u.email, fio, amount, date, method, company, account_bank, files:uploaded, status:'Новое', adminDocs:[], created:new Date().toISOString(), history:[{type:'Создание', text:'Заявка создана', date:new Date().toISOString()}] };
+  all.push(claim); setAllClaims(all); alert('Заявление отправлено'); showCabinet();
+};
+
+qs('#cancelClaimBtn').onclick=()=>{
+  const u=getCurrentUser(); if(!u) return;
+  const all=getAllClaims(); const idx=all.findIndex(c=>c.email===u.email);
+  if(idx>-1){ all[idx].status='Отозвано'; (all[idx].history=all[idx].history||[]).push({type:'Отозвано', text:'Клиент отозвал заявку', date:new Date().toISOString()}); setAllClaims(all); showCabinet(); }
+};
+
+// ---- Admin ----
+function isAdmin(){ return sessionStorage.getItem('adminAuth')==='true' }
+qs('#btnAdmin').onclick=()=>{ if(!isAdmin()) qs('#loginModal').classList.add('show'); else { show(qs('#adminView')); renderClaimsList(); } };
+qs('#closeAdminLogin').onclick=()=>qs('#loginModal').classList.remove('show');
+qs('#adminLoginBtn').onclick=()=>{
+  const email=(qs('#adminEmail').value||'').trim().toLowerCase();
+  const pass=(qs('#adminPassword').value||'').trim();
+  if(email==='admin@site.ru' && pass==='123'){
+    sessionStorage.setItem('adminAuth','true'); qs('#loginModal').classList.remove('show'); show(qs('#adminView')); renderClaimsList();
+  } else alert('Неверные данные');
+};
+
+function renderClaimsList(){
+  const all=getAllClaims(); const wrap=qs('#claimsList');
+  if(!all.length){ wrap.innerHTML='<div class="subtle">Заявок пока нет</div>'; return; }
+  wrap.innerHTML = all.map(c=>'<div class="admin-claim-card" data-id="'+c.id+'"><div><p><b>ID:</b> '+c.id+'</p><p><b>Клиент:</b> '+c.email+'</p><p><b>Сумма:</b> '+c.amount+' USD</p></div><div><span class="status-badge '+statusClass(c.status)+'">'+c.status+'</span></div></div>').join('');
+  qsa('.admin-claim-card').forEach(el=> el.addEventListener('click',()=> showClaimDetails(el.getAttribute('data-id')) ));
+}
+
+function showClaimDetails(id){
+  const all=getAllClaims(); const c=all.find(x=>x.id===id); if(!c) return;
+  const statuses=['Новое','В работе','Требует док.','Утверждено','Отклонено','Отозвано'];
+  const options = statuses.map(s=>'<option value="'+s+'" '+(s===c.status?'selected':'')+'>'+s+'</option>').join('');
+  const filesHTML = arr => (arr||[]).map(f=>'<a href="'+f.data+'" target="_blank"><img src="'+f.data+'" alt="'+f.name+'"></a>').join('');
+  const historyHTML = () => (c.history||[]).map(h=>'<div class="chip" style="border-style:dashed">'+h.text+' — <span class="subtle">'+new Date(h.date).toLocaleString()+'</span></div>').join('');
+  const box = qs('#claimDetails');
+  box.innerHTML =
+    '<h3>Заявка от '+(c.fio||'—')+'</h3>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px">'+
+      '<div>'+
+        '<p><b>ID:</b> '+c.id+'</p>'+
+        '<p><b>E-mail:</b> '+c.email+'</p>'+
+        '<p><b>Сумма:</b> '+c.amount+' USD</p>'+
+        '<p><b>Дата:</b> '+new Date(c.date).toLocaleDateString()+'</p>'+
+      '</div>'+
+      '<div>'+
+        '<p><b>Метод:</b> '+c.method+'</p>'+
+        '<p><b>Компания:</b> '+(c.company||'—')+'</p>'+
+        '<p><b>Счёт:</b> '+c.account_bank+'</p>'+
+        '<label class="field">Изменить статус<select id="adminStatus" class="select">'+options+'</select></label>'+
+        '<label class="field">Комментарий<textarea id="adminComment" class="textarea" rows="3"></textarea></label>'+
+      '</div>'+
+    '</div>'+
+    '<h4 style="margin-top:12px">Документы клиента</h4><div class="file-preview">'+(filesHTML(c.files)||'<span class="subtle">нет</span>')+'</div>'+
+    '<h4 style="margin-top:12px">Документы администратора</h4><input type="file" id="adminDocsInput" multiple class="input"/><div id="adminDocsPreview" class="file-preview">'+filesHTML(c.adminDocs)+'</div>'+
+    '<div style="margin-top:12px;display:flex;gap:10px"><button class="btn primary" id="saveClaimBtn" type="button">Сохранить</button></div>'+
+    '<h4 style="margin-top:12px">История</h4><div id="historyList">'+historyHTML()+'</div>';
+
+  qs('#claimModal').classList.add('show');
+  qs('#closeClaimModal').onclick = ()=> qs('#claimModal').classList.remove('show');
+
+  qs('#adminDocsInput').addEventListener('change', async (e)=>{
+    const files=Array.from(e.target.files||[]);
+    const uploaded=await Promise.all(files.map(f=> new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res({name:f.name,type:f.type,data:r.result}); r.onerror=rej; r.readAsDataURL(f); })));
+    c.adminDocs=(c.adminDocs||[]).concat(uploaded);
+    qs('#adminDocsPreview').innerHTML = filesHTML(c.adminDocs);
+  });
+
+  qs('#saveClaimBtn').addEventListener('click', ()=>{
+    c.status = qs('#adminStatus').value;
+    const comment = (qs('#adminComment').value||'').trim();
+    (c.history=c.history||[]).push({type:'Изменение статуса', text: comment || ('Статус изменён на: '+c.status), date:new Date().toISOString()});
+    const arr=getAllClaims(); const idx=arr.findIndex(x=>x.id===c.id); if(idx>-1) arr[idx]=c; setAllClaims(arr);
+    alert('Сохранено'); renderClaimsList(); showCabinet(); qs('#claimModal').classList.remove('show');
+  });
+}
+
+// ---- Firms: pills + Interlex/BS green + lawyers chips ----
+function enhanceFirms(){ qsa('#firms > *').forEach(function(card){
+  var t=card.innerText || '';
+  // company & country
+  var m=t.match(/(ООО|ТОО|АО)\s+«([^»]+)»/i); var company=m?m[2].trim():'';
+  var cm=t.match(/страна:\s*([A-Za-zА-Яа-яЁё\-\s]+)/i); var country=cm?cm[1].trim():'';
+  // availability by text
+  var available=/есть\s+свободн\w+\s+юрист/i.test(t);
+  // force Interlex/BS available
+  if(/interlex/i.test(company) || /^\s*bs\s*$/i.test(company.replace(/\s+/g,''))) available=true;
+
+  // rewrite negative text to positive if forced
+  if(available && /нет\s+свободн\w+\s+юрист/i.test(card.innerHTML)){
+    card.innerHTML = card.innerHTML.replace(/нет\s+свободн\w+\s+юрист/gi, 'есть свободные юристы');
+  }
+
+  // badge
+  var pill=card.querySelector('.status-pill'); if(!pill){ pill=document.createElement('span'); card.appendChild(pill); }
+  pill.className='status-pill '+(available?'pill-ok':'pill-bad');
+  pill.textContent= available ? 'есть свободные юристы' : 'нет свободных юристов';
+
+  // datasets & class
+  card.dataset.name=company; card.dataset.country=country; card.dataset.available = available ? '1' : '0';
+  card.classList.toggle('available', available);
+
+  // Fix lawyer names into chips
+  var candidates = Array.prototype.slice.call(card.querySelectorAll('p,div,li,span'));
+  var lawEl = candidates.find(function(el){ return /юрист/i.test(el.textContent||''); });
+  if(lawEl){
+    var raw = (lawEl.textContent||'').replace(/^\s*(Юристы|Сотрудники|Адвокаты)[:：]?\s*/i, '').trim();
+    raw = raw.replace(/\s*[,;\/|•·]+\s*/g, ',');  // normalize separators
+    raw = raw.replace(/\s{2,}/g, ' ');
+    var parts = raw.split(',').map(function(s){ return s.trim(); }).filter(function(s){ return !!s; });
+    if(parts.length){
+      var box = document.createElement('div'); box.className='lawyers';
+      parts.forEach(function(name){ var chip=document.createElement('span'); chip.className='chip'; chip.textContent=name; box.appendChild(chip); });
+      lawEl.replaceWith(box);
+    }
+  }
+});}
+
+function filterFirms(){ var q=(qs('#firmSearch').value||'').toLowerCase().trim(); var only=qs('#onlyAvail').checked;
+  qsa('#firms > *').forEach(function(card){ var ok = !q || (card.dataset.name||'').toLowerCase().includes(q) || (card.dataset.country||'').toLowerCase().includes(q); var pass = ok && (!only || card.dataset.available==='1'); card.style.display = pass ? '' : 'none'; });
+}
+
+// Init
+syncHeader(); show(qs('#homeView')); enhanceFirms(); filterFirms();
+qs('#firmSearch').oninput=filterFirms; qs('#onlyAvail').onchange=filterFirms;
+</script>
+</body></html>
