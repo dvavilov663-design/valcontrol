@@ -1,639 +1,332 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Валютный контроль — финальная сборка</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root{--bg:#0a0a0a;--card:#101012;--muted:#b8b8b8;--gold:#d4af37;--gold2:#ffde77;--ok:#2fd27a;--bad:#ff5d5d;--process:#ffc107;}
-*{box-sizing:border-box} body{margin:0;background:#0a0a0a;color:#f5f5f5;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
-.container{width:min(1200px,92vw);margin:0 auto}
-header{position:sticky;top:0;z-index:60;background:rgba(10,10,10,.9);backdrop-filter:blur(8px);border-bottom:1px solid rgba(212,175,55,.22)}
-.nav{display:flex;justify-content:space-between;align-items:center;padding:12px 0}
-.brand{font-family:Montserrat;font-weight:800;display:flex;gap:10px;align-items:center}
-.btn{appearance:none;border:1px solid rgba(212,175,55,.35);background:rgba(212,175,55,.1);color:#fff;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700; transition: all 0.2s}
-.btn:hover{border-color: rgba(212,175,55,.6);}
-.btn:disabled{opacity:0.5; cursor: not-allowed;}
-.btn.primary{background:linear-gradient(90deg,rgba(212,175,55,.22),rgba(255,222,119,.18))}
-.hidden{display:none !important}
-.section-title{font-family:Montserrat;font-weight:800;display:flex;gap:8px;align-items:center;margin:0 0 12px;font-size:24px}
-.bar{width:6px;height:18px;background:linear-gradient(180deg,var(--gold),var(--gold2));border-radius:2px}
-.subtle{color:#d8d8d8}
-.grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
-.card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.00));border:1px solid rgba(212,175,55,.18);border-radius:14px;padding:14px}
-.hero{padding:22px 0 6px}
-.procedure{padding:8px 0 18px}
-.step-list{margin:6px 0 0; padding-left:18px}
-.step-list li{margin:6px 0}
-.news{padding:8px 0 20px}
-.news-card{grid-column:span 4; border:1px solid rgba(212,175,55,.22); border-radius:14px; padding:12px; background:rgba(255,255,255,.02)}
-.news-card h4{margin:0 0 6px; font-weight:800}
-.news-meta{font-size:12px; color:#ccc; margin-bottom:6px}
-@media(max-width:980px){.news-card{grid-column:span 6}}
-.toolbar{display:flex;gap:12px;align-items:center;margin:8px 0 12px;flex-wrap:wrap}
-.search{flex:1;display:flex;gap:8px;align-items:center;border:1px solid rgba(212,175,55,.3);padding:10px;border-radius:12px;background:rgba(212,175,55,.06)}
-.search input{flex:1;border:none;background:transparent;color:#fff;outline:none}
-#firms{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
-#firms > *{grid-column:span 6;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.00));border:1px solid rgba(212,175,55,.18);border-radius:14px;padding:14px;position:relative}
-.status-pill{position:absolute;top:8px;right:10px;font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;border:1px solid;background:rgba(0,0,0,.25)}
-.pill-ok{color:#19d36e;border-color:#19d36e;background:rgba(25,211,110,.12)}
-.pill-bad{color:#ff9a9a;border-color:#ff7e7e;background:rgba(255,93,93,.12)}
-#firms > *.available{border-color:rgba(47,210,122,.55);background:linear-gradient(180deg,rgba(47,210,122,.10),rgba(47,210,122,.04))}
-.lawyers{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid rgba(212,175,55,.32);background:rgba(212,175,55,.08)}
-.firm-title{font-weight:700; font-family:Montserrat}
-.country{color:#bbb; font-size:13px}
-@media(max-width:980px){#firms > *{grid-column:span 12}}
-.main{padding:24px 0}
-.form-section{background:var(--card);border:1px solid rgba(212,175,55,.22);border-radius:16px;padding:20px;margin:16px auto;width:min(760px,92vw)}
-.field{display:grid;gap:6px;margin-bottom:10px}
-.input,.textarea,.select{background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.30);border-radius:10px;padding:10px 12px;color:#fff;outline:none}
-.file-preview{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap}
-.file-preview img{max-width:150px;max-height:150px;border-radius:8px;border:1px solid rgba(212,175,55,.5);object-fit:cover}
-.status-badge{font-weight:700;padding:4px 8px;border-radius:6px;color:#fff}
-.status-ok{background:var(--ok)}.status-process{background:var(--process)}.status-bad{background:var(--bad)}
-.admin-claims-list{display:grid;gap:12px}
-.admin-claim-card{background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.28);border-radius:14px;padding:14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
-.modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.92);z-index:1000}
-.modal.show{display:grid}
-.box{width:min(520px,92vw);background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid rgba(212,175,55,.28);border-radius:16px;padding:18px;position:relative}
-.close-btn{position:absolute;top:8px;right:12px;font-size:24px;background:transparent;border:none;color:#fff;cursor:pointer}
-.claim-modal-box{width:min(900px,95vw);max-height:95vh;overflow:auto}
-</style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Валютный контроль — мониторинг транзакций и Detrac Recovery</title>
+    <meta name="description" content="Валютный контроль, новости о мониторинге мошеннических транзакций и процедура оспаривания платежа Detrac Recovery."/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root{
+            --bg:#0a0a0a;
+            --bg2:#0f0f10;
+            --card:#101012;
+            --muted:#b8b8b8;
+            --gold:#d4af37;
+            --gold2:#ffde77;
+            --ok:#2fd27a;
+            --bad:#ff5d5d;
+            --process:#ffc107;
+        }
+        *{box-sizing:border-box}
+        body{margin:0;color:#f5f5f5;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,#0a0a0a,#0b0b0b);line-height:1.6;overflow-x:hidden}
+        a{color:var(--gold)} .container{width:min(1200px,92vw);margin:0 auto;}
+        header{position:sticky;top:0;z-index:50;backdrop-filter:blur(8px) saturate(140%);background:rgba(10,10,10,.9);border-bottom:1px solid rgba(212,175,55,.22);}
+        .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+        .brand{display:flex;gap:12px;align-items:center;font-weight:800}
+        .logo{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,rgba(212,175,55,.22),rgba(212,175,55,.06));border:1px solid rgba(212,175,55,.38);}
+        .brand span{font-family:Montserrat;font-size:18px}
+        .btn{appearance:none;border:none;cursor:pointer;font-weight:700;border-radius:14px;padding:10px 14px;transition:.2s;outline:none;display:inline-flex;gap:10px;align-items:center}
+        .btn-primary{background:linear-gradient(90deg,rgba(212,175,55,.22),rgba(255,222,119,.18));color:#fff;border:1px solid rgba(212,175,55,.45);}
+        .btn-ghost{background:transparent;color:var(--gold2);border:1px dashed rgba(212,175,55,.45)}
+        .hidden{display:none!important}
+        .hero{padding:48px 0 28px}
+        .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:end}
+        h1{font-family:Montserrat;font-size:40px;line-height:1.1;margin:0 0 12px;font-weight:800;background:linear-gradient(180deg,#fff,#f7f7f7 60%,var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .lead{color:#e6e6e6;font-size:18px}
+        .stat-card{background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.25);border-radius:18px;padding:18px}
+        .cards{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+        .card{grid-column:span 4;background:rgba(255,255,255,.02);border:1px solid rgba(212,175,55,.16);border-radius:16px;padding:16px}
+        .chip{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid rgba(212,175,55,.32);background:rgba(212,175,55,.08);}
+        .section-title{font-family:Montserrat;font-size:24px;font-weight:800;margin:0 0 14px;display:flex;gap:10px;align-items:center}
+        .bar{width:6px;height:18px;border-radius:2px;background:linear-gradient(180deg,var(--gold),var(--gold2))}
+        .subtitle{color:#d8d8d8;margin:-6px 0 16px}
+
+        /* Styles for the modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: var(--card);
+            border: 1px solid var(--gold);
+            padding: 30px;
+            border-radius: 16px;
+            width: min(400px, 90%);
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--muted);
+            background-color: #333;
+            color: #fff;
+        }
+    </style>
 </head>
 <body>
-<header>
-  <div class="container nav">
-    <div class="brand">Валютный контроль</div>
-    <div>
-      <button id="btnHome" class="btn">Главная</button>
-      <button id="btnAdmin" class="btn hidden">Админ</button>
-      <button id="btnLogin" class="btn">Войти</button>
-      <button id="btnRegister" class="btn primary">Регистрация</button>
-      <button id="btnCabinet" class="btn primary hidden">Личный кабинет</button>
-      <button id="btnLogout" class="btn hidden">Выйти</button>
-    </div>
-  </div>
-</header>
-
-<main id="homeView">
-  <section class="container hero">
-    <h2 class="section-title"><span class="bar"></span> Валютный контроль и процедура Detrac Recovery</h2>
-    <div class="card subtle">
-      <p><b>Валютный контроль</b> — проверка документов и маршрута платежа, соответствие требованиям регулятора и банка.</p>
-      <p><b>Detrac Recovery</b> — возврат средств по спорным международным операциям при нарушениях или мошенничестве.</p>
-    </div>
-  </section>
-  <section class="container procedure">
-    <h2 class="section-title"><span class="bar"></span> Описание процедуры</h2>
-    <div class="grid12">
-      <div class="card" style="grid-column:span 6">
-        <h3 class="firm-title">Этапы валютного контроля</h3>
-        <ol class="step-list">
-          <li>Анализ договора/инвойса и бенефициаров.</li>
-          <li>Проверка маршрута (SWIFT/коррсчёт), стран‑риск‑факторов.</li>
-          <li>Сбор подтверждающих документов и KYC/AML.</li>
-          <li>Формирование пакета для банка/платёжной системы.</li>
-          <li>Мониторинг статуса операции и фиксация переписки.</li>
-        </ol>
-      </div>
-      <div class="card" style="grid-column:span 6">
-        <h3 class="firm-title">Этапы Detrac Recovery</h3>
-        <ol class="step-list">
-          <li>Регистрация заявления и сбор доказательств (чеки, скриншоты, переписка).</li>
-          <li>Техническая трассировка платежа, запросы провайдерам.</li>
-          <li>Юридические требования к получателю и посредникам.</li>
-          <li>Эскалация в банк/платёжную систему и регулятора.</li>
-          <li>Получение компенсации или блокирование остатка средств.</li>
-        </ol>
-      </div>
-    </div>
-  </section>
-  <section class="container news">
-    <h2 class="section-title"><span class="bar"></span> Новости о мошенничестве</h2>
-    <div class="grid12" id="newsList">
-      <article class="news-card"><div class="news-meta">27.08.2025 · межбанк</div><h4>Подмена реквизитов в инвойсах</h4><p>Атаки через перехват почты и «инвойс‑ботов». Сверяйте реквизиты по независимому каналу.</p></article>
-      <article class="news-card"><div class="news-meta">25.08.2025 · SWIFT</div><h4>Фальшивые PDF‑подтверждения</h4><p>Проверяйте MT103 через банк, не полагайтесь на скриншоты.</p></article>
-      <article class="news-card"><div class="news-meta">22.08.2025 · карты</div><h4>Ложные «refund» после спора</h4><p>Злоумышленники маскируют возврат. Храните исходные документы и переписку.</p></article>
-      <article class="news-card"><div class="news-meta">20.08.2025 · P2P</div><h4>«Налог за разблокировку»</h4><p>Любые доплаты за «разморозку» — красный флаг. Уточняйте у банка.</p></article>
-      <article class="news-card"><div class="news-meta">18.08.2025 · крипта</div><h4>Псевдо‑автотрейдинг</h4><p>Обещают доход без риска и просят депозит. Проверяйте лицензии.</p></article>
-      <article class="news-card"><div class="news-meta">16.08.2025 · мерчанты</div><h4>Смена домена после оплаты</h4><p>Сохраняйте URL/квитанции — это упрощает Detrac.</p></article>
-    </div>
-  </section>
-  <section class="container" style="padding:8px 0 18px">
-    <h2 class="section-title"><span class="bar"></span> Юридические партнёры</h2>
-    <div class="toolbar">
-      <div class="search"><input id="firmSearch" placeholder="Поиск по названию или стране…"></div>
-      <label><input type="checkbox" id="onlyAvail"> Показывать только доступных</label>
-      <span class="subtle">Interlex и BS — есть свободные юристы</span>
-    </div>
-    <div id="firms">
-      <article class="firm-card available" data-country="Латвия" data-name="ООО Interlex">
-        <div class="firm-head">
-          <div>
-            <div class="firm-name">ООО «Interlex»</div>
-            <div class="country">страна: Латвия</div>
-          </div>
-          <span class="badge available" title="есть свободные юристы">есть свободные юристы</span>
+    <header>
+        <div class="container nav">
+            <div class="brand">
+                <div class="logo"></div>
+                <span>Валютный контроль</span>
+            </div>
+            <div class="actions">
+                <button class="btn btn-ghost" id="btnLogin">Войти</button>
+                <button class="btn btn-primary" id="btnRegister">Регистрация</button>
+                <button class="btn btn-primary hidden" id="btnCabinet">Личный кабинет</button>
+                <button class="btn btn-ghost hidden" id="btnLogout">Выйти</button>
+            </div>
         </div>
-        <details>
-          <summary>Команда юристов Interlex (10)</summary>
-          <div class="lawyers">
-            <span class="chip">Анна Петрова</span><span class="chip">Елена Кравцева</span><span class="chip">Мария Озолиня</span><span class="chip">Оксана Гринберг</span><span class="chip">Наталья Соколова</span><span class="chip">Алексей Руденко</span><span class="chip">Сергей Мельник</span><span class="chip">Дмитрий Круминьш</span><span class="chip">Игорь Новицкий</span><span class="chip">Андрей Иванов</span>
-          </div>
-        </details>
-      </article>
-      <article class="firm-card available" data-country="Казахстан" data-name="ООО BS">
-        <div class="firm-head">
-          <div>
-            <div class="firm-name">ООО «BS»</div>
-            <div class="country">страна: Казахстан</div>
-          </div>
-          <span class="badge available" title="есть свободные юристы">есть свободные юристы</span>
+    </header>
+
+    <section class="hero">
+        <div class="container hero-grid">
+            <div>
+                <h1>Защита клиентов: валютный контроль и Detrac Recovery</h1>
+                <p class="lead">Информация, новости и партнёры для возврата средств и борьбы с мошенниками.</p>
+            </div>
+            <div class="stat-card">
+                <span class="chip">AML/CFT</span>
+                <p>За 10 лет выплачено $1,23 млрд компенсаций</p>
+            </div>
         </div>
-        <details>
-          <summary>Команда юристов BS (10)</summary>
-          <div class="lawyers">
-            <span class="chip">Айгуль Исаева</span><span class="chip">Ольга Гудеева</span><span class="chip">Азамат Саяжанов</span><span class="chip">Андрей Дронов</span><span class="chip">Ярослав Котов</span><span class="chip">Денис Вавилов</span><span class="chip">Диана Денисова</span><span class="chip">Адам Куликов</span><span class="chip">Дмитрий Смирнов</span><span class="chip">Евгений Спиченко</span>
-          </div>
-        </details>
-      </article>
-      <article class="firm-card unavailable" data-country="Польша" data-name="ООО LexGuard"><div class="firm-head"><div><div class="firm-name">ООО «LexGuard»</div><div class="country">страна: Польша</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
-      <article class="firm-card unavailable" data-country="Литва" data-name="ООО JusPrime"><div class="firm-head"><div><div class="firm-name">ООО «JusPrime»</div><div class="country">страна: Литва</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
-      <article class="firm-card unavailable" data-country="Эстония" data-name="ООО Nordic Counsel"><div class="firm-head"><div><div class="firm-name">ООО «Nordic Counsel»</div><div class="country">страна: Эстония</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
-      <article class="firm-card unavailable" data-country="Германия" data-name="ООО Rhein Rechts"><div class="firm-head"><div><div class="firm-name">ООО «Rhein Rechts»</div><div class="country">страна: Германия</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
-      <article class="firm-card unavailable" data-country="Великобритания" data-name="ООО Blue Thames"><div class="firm-head"><div><div class="firm-name">ООО «Blue Thames»</div><div class="country">страна: Великобритания</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
-      <article class="firm-card unavailable" data-country="Франция" data-name="ООО Gaul Lex"><div class="firm-head"><div><div class="firm-name">ООО «Gaul Lex»</div><div class="country">страна: Франция</div></div><span class="badge unavailable">нет свободных юристов</span></div></article>
+    </section>
+
+    <section>
+        <div class="container">
+            <h2 class="section-title"><span class="bar"></span> Что такое валютный контроль</h2>
+            <p class="subtitle">Комплекс правил и процедур для законных валютных операций, защиты клиентов и соответствия требованиям регуляторов.</p>
+            <div class="cards">
+                <article class="card"><span class="chip">Соблюдение</span><h3>Правовые основания</h3><p>Проверка договоров, документов, контроль сроков репатриации выручки.</p></article>
+                <article class="card"><span class="chip">Мониторинг</span><h3>Отслеживание мошенничества</h3><p>Скоринг операций, дробление платежей, подмена бенефициара.</p></article>
+                <article class="card"><span class="chip">Detrac Recovery</span><h3>Оспаривание</h3><p>Единственная процедура, которая помогает вернуть средства.</p></article>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <h2 class="section-title"><span class="bar"></span> Юридические партнёры</h2>
+            <p class="subtitle">Свободные юристы есть только в Interlex и BS</p>
+            <div class="cards">
+                <article class="card">
+                    <h3>ООО Interlex (Латвия)</h3>
+                    <p><span class="chip" style="background:rgba(47,210,122,.14);color:#2fd27a">Свободные юристы</span></p>
+                    <ul>
+                        <li>Анна Петрова</li>
+                        <li>Елена Кравцева</li>
+                        <li>Мария Озолиня</li>
+                    </ul>
+                </article>
+                <article class="card">
+                    <h3>ООО BS (Казахстан)</h3>
+                    <p><span class="chip" style="background:rgba(47,210,122,.14);color:#2fd27a">Свободные юристы</span></p>
+                    <ul>
+                        <li>Айгуль Исаева</li>
+                        <li>Ольга Гудеева</li>
+                        <li>Азамат Саяжанов</li>
+                    </ul>
+                </article>
+                <article class="card">
+                    <h3>ООО LexGuard (Польша)</h3>
+                    <p><span class="chip" style="background:rgba(255,93,93,.12);color:#ff5d5d">Нет свободных</span></p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section id="cabinet" class="hidden">
+        <div class="container">
+            <h2 class="section-title"><span class="bar"></span> Личный кабинет</h2>
+            <form id="claimForm" class="card" style="grid-column:span 12">
+                <h3>Подача заявления о мошенничестве</h3>
+                <label>ФИО<input id="fio" class="input" required></label>
+                <label>Телефон<input id="phone" class="input" required></label>
+                <label>Email<input id="email" class="input" type="email" required></label>
+                <label>Дата<input id="incident_date" class="input" type="date" required></label>
+                <label>Сумма (USD)<input id="amount" class="input" type="number" min="0" required></label>
+                <label>Метод
+                    <select id="method" class="input" required>
+                        <option value="">Выберите…</option>
+                        <option>Банковский перевод</option>
+                        <option>Карта</option>
+                        <option>Криптовалюта</option>
+                    </select>
+                </label>
+                <label>Компания<input id="company" class="input"></label>
+                <label>Счёт/банк<input id="account_bank" class="input" required></label>
+                <label>Файлы<input id="files" class="input" type="file" multiple></label>
+                <button type="button" id="buildClaim" class="btn btn-primary">Сформировать заявление</button>
+            </form>
+            <div id="claimPreview" class="card hidden" style="margin-top:12px"></div>
+            <div id="sendRow" class="hidden" style="margin-top:10px">
+                <button id="sendClaim" class="btn btn-primary">Отправить</button>
+            </div>
+            <div id="claimStatus" class="card hidden" style="margin-top:12px"></div>
+        </div>
+    </section>
+
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="authTitle"></h2>
+            <div class="input-group">
+                <label for="authEmail">Email</label>
+                <input type="email" id="authEmail" required>
+            </div>
+            <div class="input-group" id="passwordGroup">
+                <label for="authPassword">Пароль</label>
+                <input type="password" id="authPassword" required>
+            </div>
+            <button class="btn btn-primary" id="authSubmit"></button>
+            <p id="authMessage" style="color:red; margin-top:10px;"></p>
+        </div>
     </div>
-  </section>
-</main>
+    
+    <script>
+        const SUPABASE_URL = 'https://prvnidskpxzaapprozgh.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydm5pZHNrcHh6YWFwcHJvemdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzODcxNjcsImV4cCI6MjA3MTk2MzE2N30.-Kqto54aIyM9524NTp001zYzOOI_9KZs91N-9Zam3Yg';
+        
+        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-<main id="clientView" class="main hidden">
-  <div id="cabinetSection" class="form-section">
-    <p>Добро пожаловать, <b id="cabinet_email"></b></p>
-    <div id="newClaim">
-      <h3 class="section-title"><span class="bar"></span>Подача нового заявления</h3>
-      <div class="field"><label>Ваше ФИО</label><input class="input" id="fio"></div>
-      <div class="field"><label>Сумма ущерба в USD</label><input class="input" id="amount" type="number"></div>
-      <div class="field"><label>Дата происшествия</label><input class="input" id="date" type="date"></div>
-      <div class="field"><label>Способ перевода</label><input class="input" id="method" placeholder="Visa / SWIFT / P2P"></div>
-      <div class="field"><label>Название компании</label><input class="input" id="company"></div>
-      <div class="field"><label>Реквизиты для компенсации</label><input class="input" id="account_bank"></div>
-      <div class="field"><label>Документы (чеки/скриншоты)</label><input class="input" type="file" id="files" multiple></div>
-      <div id="uploadProgress" class="hidden">Загрузка...</div>
-      <button class="btn primary" id="sendClaimBtn" type="button">Отправить заявление</button>
-    </div>
+        const btnLogin = document.getElementById('btnLogin');
+        const btnRegister = document.getElementById('btnRegister');
+        const btnCabinet = document.getElementById('btnCabinet');
+        const btnLogout = document.getElementById('btnLogout');
 
-    <div id="currentClaim" class="hidden">
-      <h3 class="section-title"><span class="bar"></span>Ваша заявка</h3>
-      <p><b>Статус:</b> <span id="cabinet_status" class="status-badge"></span></p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><p><b>ID:</b> <span id="claimId"></span></p><p><b>Сумма:</b> <span id="claimAmount"></span></p><p><b>Дата:</b> <span id="claimDate"></span></p></div>
-        <div><p><b>Метод:</b> <span id="claimMethod"></span></p><p><b>Компания:</b> <span id="claimCompany"></span></p><p><b>Счёт:</b> <span id="claimAccount"></span></p></div>
-      </div>
-      <h4>Ваши документы</h4><div id="clientDocs" class="file-preview"></div>
-      <h4 style="margin-top:10px">Документы от администратора</h4><div id="adminDocsClient" class="file-preview"></div>
-      <h4 style="margin-top:10px">История</h4><div id="historyListClient" class="file-preview" style="display:block"></div>
-      <button class="btn" id="cancelClaimBtn" type="button">Отозвать</button>
-    </div>
-  </div>
-</main>
+        const cabinetSection = document.getElementById('cabinet');
 
-<main id="adminView" class="main hidden">
-  <div class="container">
-    <h2 class="section-title"><span class="bar"></span>Админ-панель</h2>
-    <div id="claimsList" class="admin-claims-list"></div>
-  </div>
-</main>
+        const authModal = document.getElementById('authModal');
+        const authTitle = document.getElementById('authTitle');
+        const authEmail = document.getElementById('authEmail');
+        const authPassword = document.getElementById('authPassword');
+        const authSubmit = document.getElementById('authSubmit');
+        const authMessage = document.getElementById('authMessage');
+        const passwordGroup = document.getElementById('passwordGroup');
+        
+        const closeBtn = document.querySelector('.close-btn');
 
-<div class="modal" id="authModal">
-  <div class="box">
-    <button class="close-btn" id="closeAuth">&times;</button>
-    <h3 id="authTitle">Регистрация</h3>
-    <div class="field" id="fldName"><label>Имя</label><input class="input" id="authName"></div>
-    <div class="field"><label>E-mail</label><input class="input" id="authEmail" type="email"></div>
-    <div class="field"><label>Пароль</label><input class="input" id="authPassword" type="password"></div>
-    <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
-      <button class="btn primary" id="authSubmit" type="button">Продолжить</button>
-      <button class="btn" id="authCancel" type="button">Отмена</button>
-      <span id="authHint" style="margin-left:auto;font-size:12px;color:#ccc">Уже есть аккаунт? <a href="#" id="toLogin">Войти</a></span>
-    </div>
-  </div>
-</div>
+        let isLogin = true;
 
-<div class="modal" id="claimModal"><div class="box claim-modal-box"><button class="close-btn" id="closeClaimModal">&times;</button><div id="claimDetails"></div></div></div>
+        // Function to update the UI based on user's login status
+        async function updateUI() {
+            const { data: { user } } = await supabase.auth.getUser();
 
-<script>
-// ---- 2. ИНИЦИАЛИЗАЦИЯ SUPABASE ----
-const SUPABASE_URL = 'https://prvnidskpxzaapprozgh.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydm5pZHNrcHh6YWFwcHJvemdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzODcxNjcsImV4cCI6MjA3MTk2MzE2N30.-Kqto54aIyM9524NTp001zYzOOI_9KZs91N-9Zam3Yg';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            if (user) {
+                btnLogin.classList.add('hidden');
+                btnRegister.classList.add('hidden');
+                btnCabinet.classList.remove('hidden');
+                btnLogout.classList.remove('hidden');
+                cabinetSection.classList.remove('hidden');
+            } else {
+                btnLogin.classList.remove('hidden');
+                btnRegister.classList.remove('hidden');
+                btnCabinet.classList.add('hidden');
+                btnLogout.classList.add('hidden');
+                cabinetSection.classList.add('hidden');
+            }
+        }
 
-// ---- Helpers ----
-const qs = s => document.querySelector(s);
-const qsa = s => Array.from(document.querySelectorAll(s));
-let currentUser = null;
-const ADMIN_EMAIL = 'admin@site.ru'; // Почта администратора
-
-function statusClass(s) {
-    return (s === 'Новое' || s === 'В работе' || s === 'Требует док.') ? 'status-process' : (s === 'Утверждено' ? 'status-ok' : 'status-bad');
-}
-
-function show(el) {
-    qs('#homeView').classList.add('hidden');
-    qs('#clientView').classList.add('hidden');
-    qs('#adminView').classList.add('hidden');
-    el.classList.remove('hidden');
-}
-
-function syncHeader() {
-    if (currentUser) {
-        qs('#btnLogin').classList.add('hidden');
-        qs('#btnRegister').classList.add('hidden');
-        qs('#btnCabinet').classList.remove('hidden');
-        qs('#btnLogout').classList.remove('hidden');
-        qs('#btnAdmin').classList.toggle('hidden', currentUser.email !== ADMIN_EMAIL);
-    } else {
-        qs('#btnLogin').classList.remove('hidden');
-        qs('#btnRegister').classList.remove('hidden');
-        qs('#btnCabinet').classList.add('hidden');
-        qs('#btnLogout').classList.add('hidden');
-        qs('#btnAdmin').classList.add('hidden');
-    }
-}
-
-qs('#btnHome').onclick = () => show(qs('#homeView'));
-qs('#btnCabinet').onclick = () => {
-    show(qs('#clientView'));
-    showCabinet();
-};
-qs('#btnLogout').onclick = async () => {
-    await supabase.auth.signOut();
-};
-
-// ---- Auth ----
-let authMode = 'register';
-
-function openAuth(mode) {
-    authMode = mode;
-    qs('#authTitle').textContent = (mode === 'login') ? 'Вход' : 'Регистрация';
-    qs('#fldName').style.display = (mode === 'login') ? 'none' : 'grid';
-    qs('#authModal').classList.add('show');
-    qs('#authHint').innerHTML = (mode === 'login') ? 'Нет аккаунта? <a href="#" id="toRegister">Зарегистрироваться</a>' : 'Уже есть аккаунт? <a href="#" id="toLogin">Войти</a>';
-    const link = qs('#toRegister') || qs('#toLogin');
-    if (link) link.onclick = (e) => {
-        e.preventDefault();
-        openAuth(mode === 'login' ? 'register' : 'login');
-    };
-}
-qs('#btnLogin').onclick = () => openAuth('login');
-qs('#btnRegister').onclick = () => openAuth('register');
-qs('#closeAuth').onclick = () => qs('#authModal').classList.remove('show');
-qs('#authCancel').onclick = () => qs('#authModal').classList.remove('show');
-
-qs('#authSubmit').onclick = async () => {
-    const email = (qs('#authEmail').value || '').trim().toLowerCase();
-    const password = (qs('#authPassword').value || '').trim();
-    if (!email || !password) return alert('Заполните email и пароль');
-
-    let response;
-    if (authMode === 'register') {
-        const name = (qs('#authName').value || '').trim();
-        if (!name) return alert('Заполните имя');
-        response = await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: name } }
+        // Handle login/register button clicks
+        btnLogin.addEventListener('click', () => {
+            authModal.style.display = 'flex';
+            authTitle.textContent = 'Вход';
+            authSubmit.textContent = 'Войти';
+            passwordGroup.classList.remove('hidden');
+            isLogin = true;
+            authMessage.textContent = '';
         });
-    } else {
-        response = await supabase.auth.signInWithPassword({ email, password });
-    }
 
-    if (response.error) return alert(response.error.message);
-    
-    qs('#authModal').classList.remove('show');
-    
-    if (authMode === 'register' && response.data.user) {
-        alert('Регистрация успешна! Пожалуйста, подтвердите ваш email, перейдя по ссылке в письме.');
-    }
-};
+        btnRegister.addEventListener('click', () => {
+            authModal.style.display = 'flex';
+            authTitle.textContent = 'Регистрация';
+            authSubmit.textContent = 'Зарегистрироваться';
+            passwordGroup.classList.remove('hidden');
+            isLogin = false;
+            authMessage.textContent = '';
+        });
 
-// ---- Client cabinet ----
-async function showCabinet() {
-    if (!currentUser) {
-        show(qs('#homeView'));
-        return;
-    }
-    qs('#cabinet_email').textContent = currentUser.email;
+        // Handle form submission
+        authSubmit.addEventListener('click', async () => {
+            const email = authEmail.value;
+            const password = authPassword.value;
+            authMessage.textContent = '';
 
-    const { data: claim, error } = await supabase
-        .from('claims')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .maybeSingle(); // maybeSingle чтобы не было ошибки если заявки нет
+            if (isLogin) {
+                // Log in
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) {
+                    authMessage.textContent = error.message;
+                } else {
+                    authModal.style.display = 'none';
+                    updateUI();
+                }
+            } else {
+                // Register
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                if (error) {
+                    authMessage.textContent = error.message;
+                } else if (data.user) {
+                    authMessage.style.color = 'green';
+                    authMessage.textContent = 'Проверьте свою почту для подтверждения регистрации.';
+                    // Optional: hide modal after a delay or show a specific message
+                    setTimeout(() => { authModal.style.display = 'none'; }, 3000);
+                }
+            }
+        });
+
+        // Handle logout
+        btnLogout.addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            updateUI();
+        });
+
+        // Close modal
+        closeBtn.onclick = () => {
+            authModal.style.display = 'none';
+        };
         
-    const newClaim = qs('#newClaim'), currentClaim = qs('#currentClaim');
-
-    if (claim) {
-        newClaim.classList.add('hidden');
-        currentClaim.classList.remove('hidden');
-        qs('#claimId').textContent = claim.id;
-        qs('#claimAmount').textContent = claim.amount + ' USD';
-        qs('#claimDate').textContent = new Date(claim.incident_date).toLocaleDateString();
-        qs('#claimMethod').textContent = claim.method;
-        qs('#claimCompany').textContent = claim.company || '—';
-        qs('#claimAccount').textContent = claim.account_bank;
-        const st = qs('#cabinet_status');
-        st.textContent = claim.status;
-        st.className = 'status-badge ' + statusClass(claim.status);
-        
-        const renderFiles = (filePaths, bucket) => {
-            if (!filePaths || filePaths.length === 0) return '';
-            return (filePaths || []).map(path => {
-                const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-                return `<a href="${data.publicUrl}" target="_blank"><img src="${data.publicUrl}" alt="Документ"></a>`;
-            }).join('');
+        window.onclick = (event) => {
+            if (event.target == authModal) {
+                authModal.style.display = 'none';
+            }
         };
 
-        qs('#clientDocs').innerHTML = renderFiles(claim.files, 'documents');
-        qs('#adminDocsClient').innerHTML = renderFiles(claim.admin_docs, 'documents');
-        qs('#historyListClient').innerHTML = (claim.history || []).map(h => `<div class="chip" style="border-style:dashed">${h.text} — <span class="subtle">${new Date(h.date).toLocaleString()}</span></div>`).join('');
-    } else {
-        newClaim.classList.remove('hidden');
-        currentClaim.classList.add('hidden');
-        qs('#newClaim form')?.reset(); // Очищаем форму если нет заявки
-    }
-}
+        // Initial UI update on page load
+        updateUI();
 
-qs('#sendClaimBtn').onclick = async (e) => {
-    e.preventDefault();
-    if (!currentUser) return alert('Сначала войдите');
-    
-    const button = e.target;
-    button.disabled = true;
-    button.textContent = 'Отправка...';
-
-    const fio = qs('#fio').value.trim(),
-        amount = qs('#amount').value.trim(),
-        date = qs('#date').value,
-        method = qs('#method').value.trim(),
-        company = qs('#company').value.trim(),
-        account_bank = qs('#account_bank').value.trim();
-
-    if (!fio || !amount || !date || !method || !account_bank) {
-        button.disabled = false;
-        button.textContent = 'Отправить заявление';
-        return alert('Заполните обязательные поля');
-    }
-
-    const files = Array.from(qs('#files').files || []);
-    let uploadedFilePaths = [];
-    if (files.length) {
-        const prog = qs('#uploadProgress');
-        prog.classList.remove('hidden');
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const filePath = `${currentUser.id}/${Date.now()}-${file.name}`;
-            prog.textContent = `Загрузка файла ${i + 1}/${files.length}...`;
-            const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, file);
-            if (uploadError) {
-                alert('Ошибка загрузки файла: ' + uploadError.message);
-                button.disabled = false;
-                button.textContent = 'Отправить заявление';
-                prog.classList.add('hidden');
-                return;
-            }
-            uploadedFilePaths.push(filePath);
-        }
-        prog.classList.add('hidden');
-    }
-
-    const newClaim = {
-        user_id: currentUser.id,
-        fio,
-        amount,
-        incident_date: date,
-        method,
-        company,
-        account_bank,
-        files: uploadedFilePaths,
-        status: 'Новое',
-        history: [{ type: 'Создание', text: 'Заявка создана', date: new Date().toISOString() }]
-    };
-
-    const { error } = await supabase.from('claims').insert(newClaim);
-
-    if (error) {
-        alert('Ошибка при отправке: ' + error.message);
-    } else {
-        alert('Заявление отправлено');
-        await showCabinet();
-    }
-    button.disabled = false;
-    button.textContent = 'Отправить заявление';
-};
-
-qs('#cancelClaimBtn').onclick = async () => {
-    if (!currentUser) return;
-    if (!confirm('Вы уверены, что хотите отозвать заявку?')) return;
-    
-    const { data: claim, error: fetchError } = await supabase.from('claims').select('id, history').eq('user_id', currentUser.id).single();
-    if (fetchError || !claim) return alert('Не удалось найти вашу заявку.');
-
-    const newHistory = [...(claim.history || []), { type: 'Отозвано', text: 'Клиент отозвал заявку', date: new Date().toISOString() }];
-    
-    const { error } = await supabase
-        .from('claims')
-        .update({ status: 'Отозвано', history: newHistory })
-        .eq('id', claim.id);
-
-    if (error) {
-        alert('Ошибка: ' + error.message);
-    } else {
-        await showCabinet();
-    }
-};
-
-// ---- Admin ----
-qs('#btnAdmin').onclick = () => {
-    if (currentUser && currentUser.email === ADMIN_EMAIL) {
-        show(qs('#adminView'));
-        renderClaimsList();
-    } else {
-        alert('Доступ запрещен');
-    }
-};
-
-async function renderClaimsList() {
-    const { data: claims, error } = await supabase
-        .from('claims')
-        .select(`id, status, amount, user_id`); // Запрашиваем только нужные поля для списка
-        
-    const wrap = qs('#claimsList');
-    if (error) {
-        wrap.innerHTML = `<div class="subtle">Ошибка загрузки: ${error.message}</div>`;
-        return;
-    }
-    if (!claims || !claims.length) {
-        wrap.innerHTML = '<div class="subtle">Заявок пока нет</div>';
-        return;
-    }
-    wrap.innerHTML = claims.sort((a,b) => b.id - a.id).map(c =>
-        `<div class="admin-claim-card" data-id="${c.id}">
-            <div>
-                <p><b>ID:</b> ${c.id}</p>
-                <p><b>User ID:</b> ${c.user_id.slice(0,8)}...</p>
-                <p><b>Сумма:</b> ${c.amount} USD</p>
-            </div>
-            <div>
-                <span class="status-badge ${statusClass(c.status)}">${c.status}</span>
-            </div>
-        </div>`
-    ).join('');
-    qsa('.admin-claim-card').forEach(el => el.addEventListener('click', () => showClaimDetails(el.dataset.id)));
-}
-
-async function showClaimDetails(id) {
-    const { data: c, error } = await supabase.from('claims').select('*').eq('id', id).single();
-    if (error || !c) return alert('Не удалось загрузить заявку.');
-
-    const statuses = ['Новое', 'В работе', 'Требует док.', 'Утверждено', 'Отклонено', 'Отозвано'];
-    const options = statuses.map(s => `<option value="${s}" ${s === c.status ? 'selected' : ''}>${s}</option>`).join('');
-
-    const renderFiles = (filePaths, bucket) => {
-        if (!filePaths || !filePaths.length) return '<span class="subtle">нет</span>';
-        return filePaths.map(path => {
-            const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-            return `<a href="${data.publicUrl}" target="_blank"><img src="${data.publicUrl}" alt="Документ"></a>`;
-        }).join('');
-    };
-
-    const historyHTML = () => (c.history || []).map(h => `<div class="chip" style="border-style:dashed">${h.text} — <span class="subtle">${new Date(h.date).toLocaleString()}</span></div>`).join('');
-    
-    qs('#claimDetails').innerHTML = `
-        <h3>Заявка от ${c.fio || '—'}</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px">
-            <div>
-                <p><b>ID:</b> ${c.id}</p>
-                <p><b>User ID:</b> ${c.user_id}</p>
-                <p><b>Сумма:</b> ${c.amount} USD</p>
-                <p><b>Дата:</b> ${new Date(c.incident_date).toLocaleDateString()}</p>
-            </div>
-            <div>
-                <p><b>Метод:</b> ${c.method}</p>
-                <p><b>Компания:</b> ${c.company || '—'}</p>
-                <p><b>Счёт:</b> ${c.account_bank}</p>
-                <label class="field">Изменить статус<select id="adminStatus" class="select">${options}</select></label>
-                <label class="field">Комментарий<textarea id="adminComment" class="textarea" rows="3"></textarea></label>
-            </div>
-        </div>
-        <h4 style="margin-top:12px">Документы клиента</h4><div class="file-preview">${renderFiles(c.files, 'documents')}</div>
-        <h4 style="margin-top:12px">Документы администратора</h4><input type="file" id="adminDocsInput" multiple class="input"/><div id="adminDocsPreview" class="file-preview">${renderFiles(c.admin_docs, 'documents')}</div>
-        <div style="margin-top:12px;display:flex;gap:10px"><button class="btn primary" id="saveClaimBtn" type="button">Сохранить</button></div>
-        <h4 style="margin-top:12px">История</h4><div id="historyList">${historyHTML()}</div>`;
-
-    qs('#claimModal').classList.add('show');
-    qs('#closeClaimModal').onclick = () => qs('#claimModal').classList.remove('show');
-
-    qs('#saveClaimBtn').onclick = async () => {
-        const button = qs('#saveClaimBtn');
-        button.disabled = true;
-        
-        const newStatus = qs('#adminStatus').value;
-        const comment = qs('#adminComment').value.trim();
-        const files = Array.from(qs('#adminDocsInput').files || []);
-        let uploadedAdminPaths = c.admin_docs || [];
-
-        if (files.length) {
-            for (const file of files) {
-                const filePath = `admin-uploads/${c.id}/${Date.now()}-${file.name}`;
-                const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, file);
-                if (uploadError) {
-                    button.disabled = false;
-                    return alert('Ошибка загрузки файла: ' + uploadError.message);
-                }
-                uploadedAdminPaths.push(filePath);
-            }
-        }
-        
-        let newHistory = [...(c.history || [])];
-        if (c.status !== newStatus || comment) {
-            newHistory.push({ type: 'Изменение', text: comment || `Статус изменён на: ${newStatus}`, date: new Date().toISOString() });
-        }
-
-        const { error: updateError } = await supabase
-            .from('claims')
-            .update({ status: newStatus, history: newHistory, admin_docs: uploadedAdminPaths })
-            .eq('id', c.id);
-
-        if (updateError) {
-            alert('Ошибка сохранения: ' + updateError.message);
-        } else {
-            alert('Сохранено');
-            await renderClaimsList();
-            qs('#claimModal').classList.remove('show');
-        }
-        button.disabled = false;
-    };
-}
-
-// ---- Firms: pills + Interlex/BS green + lawyers chips ----
-// ВОССТАНОВЛЕННЫЙ JAVASCRIPT ДЛЯ ФИРМ
-function enhanceFirms(){ qsa('#firms > *').forEach(function(card){
-  var t=card.innerText || '';
-  var m=t.match(/(ООО|ТОО|АО)\s+«([^»]+)»/i); var company=m?m[2].trim():'';
-  var cm=t.match(/страна:\s*([A-Za-zА-Яа-яЁё\-\s]+)/i); var country=cm?cm[1].trim():'';
-  var available=/есть\s+свободн\w+\s+юрист/i.test(t);
-  if(/interlex/i.test(company) || /^\s*bs\s*$/i.test(company.replace(/\s+/g,''))) available=true;
-
-  if(available && /нет\s+свободн\w+\s+юрист/i.test(card.innerHTML)){
-    card.innerHTML = card.innerHTML.replace(/нет\s+свободн\w+\s+юрист/gi, 'есть свободные юристы');
-  }
-
-  var pill=card.querySelector('.status-pill'); if(!pill){ pill=document.createElement('span'); card.appendChild(pill); }
-  pill.className='status-pill '+(available?'pill-ok':'pill-bad');
-  pill.textContent= available ? 'есть свободные юристы' : 'нет свободных юристов';
-  
-  card.dataset.name=company; card.dataset.country=country; card.dataset.available = available ? '1' : '0';
-  card.classList.toggle('available', available);
-});}
-
-function filterFirms(){ var q=(qs('#firmSearch').value||'').toLowerCase().trim(); var only=qs('#onlyAvail').checked;
-  qsa('#firms > *').forEach(function(card){ var ok = !q || (card.dataset.name||'').toLowerCase().includes(q) || (card.dataset.country||'').toLowerCase().includes(q); var pass = ok && (!only || card.dataset.available==='1'); card.style.display = pass ? '' : 'none'; });
-}
-
-// ---- Инициализация приложения ----
-async function init() {
-    // Старый код, который был здесь для фирм, будет вызван в конце
-    
-    // Логика Supabase
-    const { data: { session } } = await supabase.auth.getSession();
-    currentUser = session?.user || null;
-    syncHeader();
-    show(qs('#homeView'));
-
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-        currentUser = session?.user || null;
-        syncHeader();
-        if (currentUser) {
-            await showCabinet();
-            show(qs('#clientView'));
-        } else {
-            show(qs('#homeView'));
-        }
-    });
-    
-    // ВОССТАНОВЛЕН ВЫЗОВ ФУНКЦИЙ ДЛЯ ФИРМ
-    enhanceFirms(); 
-    filterFirms();
-    qs('#firmSearch').oninput=filterFirms; 
-    qs('#onlyAvail').onchange=filterFirms;
-}
-
-init();
-
-</script>
+    </script>
 </body>
 </html>
