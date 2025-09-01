@@ -7,7 +7,6 @@
     <meta name="description" content="Валютный контроль, новости о мониторинге мошеннических транзакций и процедура оспаривания платежа Detrac Recovery."/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root{
             --bg:#0a0a0a;
@@ -215,12 +214,14 @@
         </div>
     </div>
     
-    <script>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
         const SUPABASE_URL = 'https://prvnidskpxzaapprozgh.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydm5pZHNrcHh6YWFwcHJvemdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzODcxNjcsImV4cCI6MjA3MTk2MzE2N30.-Kqto54aIyM9524NTp001zYzOOI_9KZs91N-9Zam3Yg';
         
-        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        
         const btnLogin = document.getElementById('btnLogin');
         const btnRegister = document.getElementById('btnRegister');
         const btnCabinet = document.getElementById('btnCabinet');
@@ -240,7 +241,6 @@
 
         let isLogin = true;
 
-        // Function to update the UI based on user's login status
         async function updateUI() {
             const { data: { user } } = await supabase.auth.getUser();
 
@@ -259,7 +259,6 @@
             }
         }
 
-        // Handle login/register button clicks
         btnLogin.addEventListener('click', () => {
             authModal.style.display = 'flex';
             authTitle.textContent = 'Вход';
@@ -278,14 +277,12 @@
             authMessage.textContent = '';
         });
 
-        // Handle form submission
         authSubmit.addEventListener('click', async () => {
             const email = authEmail.value;
             const password = authPassword.value;
             authMessage.textContent = '';
 
             if (isLogin) {
-                // Log in
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) {
                     authMessage.textContent = error.message;
@@ -294,26 +291,22 @@
                     updateUI();
                 }
             } else {
-                // Register
                 const { data, error } = await supabase.auth.signUp({ email, password });
                 if (error) {
                     authMessage.textContent = error.message;
                 } else if (data.user) {
                     authMessage.style.color = 'green';
                     authMessage.textContent = 'Проверьте свою почту для подтверждения регистрации.';
-                    // Optional: hide modal after a delay or show a specific message
                     setTimeout(() => { authModal.style.display = 'none'; }, 3000);
                 }
             }
         });
 
-        // Handle logout
         btnLogout.addEventListener('click', async () => {
             await supabase.auth.signOut();
             updateUI();
         });
 
-        // Close modal
         closeBtn.onclick = () => {
             authModal.style.display = 'none';
         };
@@ -324,9 +317,7 @@
             }
         };
 
-        // Initial UI update on page load
         updateUI();
-
     </script>
 </body>
 </html>
