@@ -7,6 +7,7 @@
     <meta name="description" content="Валютный контроль, новости о мониторинге мошеннических транзакций и процедура оспаривания платежа Detrac Recovery."/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root{
             --bg:#0a0a0a;
@@ -42,8 +43,6 @@
         .section-title{font-family:Montserrat;font-size:24px;font-weight:800;margin:0 0 14px;display:flex;gap:10px;align-items:center}
         .bar{width:6px;height:18px;border-radius:2px;background:linear-gradient(180deg,var(--gold),var(--gold2))}
         .subtitle{color:#d8d8d8;margin:-6px 0 16px}
-
-        /* Styles for the modal */
         .modal {
             display: none;
             position: fixed;
@@ -214,13 +213,11 @@
         </div>
     </div>
     
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
+    <script>
         const SUPABASE_URL = 'https://prvnidskpxzaapprozgh.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydm5pZHNrcHh6YWFwcHJvemdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzODcxNjcsImV4cCI6MjA3MTk2MzE2N30.-Kqto54aIyM9524NTp001zYzOOI_9KZs91N-9Zam3Yg';
         
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         const btnLogin = document.getElementById('btnLogin');
         const btnRegister = document.getElementById('btnRegister');
