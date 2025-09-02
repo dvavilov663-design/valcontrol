@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Валютный контроль — мониторинг транзакций и Detrac Recovery</title>
+  <meta name="description" content="Валютный контроль, новости о мониторинге мошеннических транзакций и процедура оспаривания платежа Detrac Recovery."/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.46.1/dist/umd/supabase.js"></script>
+  <style>
+    :root{
+      --bg:#0a0a0a; --bg2:#0f0f10; --card:#101012; --muted:#b8b8b8; --gold:#d4af37; --gold2:#ffde77;
+      --ok:#2fd27a; --bad:#ff5d5d; --process:#ffc107;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;color:#f5f5f5;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:radial-gradient(1200px 600px at 10% -10%,rgba(212,175,55,.08),transparent 60%),linear-gradient(180deg,#0a0a0a,#0b0b0b);line-height:1.6;overflow-x:hidden}
+    a{color:var(--gold)}
+    .container{width:min(1200px,92vw);margin:0 auto;}
+    header{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px) saturate(140%);background:rgba(10,10,10,.8);border-bottom:1px solid rgba(212,175,55,.22)}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;gap:12px;align-items:center;font-weight:800}
+    .logo{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,rgba(212,175,55,.22),rgba(212,175,55,.06));border:1px solid rgba(212,175,55,.38)}
+    .brand span{font-family:Montserrat;font-size:18px}
+    .tag{font-size:12px;border:1px solid rgba(212,175,55,.4);padding:2px 8px;border-radius:999px;margin-left:8px;color:var(--gold2)}
+    .btn{appearance:none;border:none;cursor:pointer;font-weight:700;border-radius:14px;padding:10px 14px;transition:.2s;outline:none;display:inline-flex;gap:10px;align-items:center}
+    .btn-primary{background:linear-gradient(90deg,rgba(212,175,55,.22),rgba(255,222,119,.18));color:#fff;border:1px solid rgba(212,175,55,.45)}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(212,175,55,.18)}
+    .btn-ghost{background:transparent;color:var(--gold2);border:1px dashed rgba(212,175,55,.45)}
+    .hidden{display:none!important}
+    .hero{padding:48px 0 28px}
+    .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:end}
+    h1{font-family:Montserrat;font-size:40px;line-height:1.1;margin:0 0 12px;font-weight:800;background:linear-gradient(180deg,#fff,#f7f7f7 60%,var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .lead{color:#e6e6e6;font-size:18px}
+    .stat-card{background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.25);border-radius:18px;padding:18px}
+    .cards{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    .card{grid-column:span 4;background:rgba(255,255,255,.02);border:1px solid rgba(212,175,55,.16);border-radius:16px;padding:16px}
+    .card.wide{grid-column:span 12}
+    .chip{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid rgba(212,175,55,.32);background:rgba(212,175,55,.08)}
+    .section-title{font-family:Montserrat;font-size:24px;font-weight:800;margin:0 0 14px;display:flex;gap:10px;align-items:center}
+    .bar{width:6px;height:18px;border-radius:2px;background:linear-gradient(180deg,var(--gold),var(--gold2))}
+    .subtitle{color:#d8d8d8;margin:-6px 0 16px}
+
+    /* Modal */
+    .modal {display:none;position:fixed;z-index:100;left:0;top:0;width:100%;height:100%;overflow:auto;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);justify-content:center;align-items:center}
+    .modal-content {background-color:var(--card);border:1px solid var(--gold);padding:26px;border-radius:16px;width:min(420px,92%)}
+    .close-btn {color:#aaa;float:right;font-size:26px;font-weight:bold}
+    .close-btn:hover,.close-btn:focus{color:white;cursor:pointer}
+    .input-group{margin-bottom:14px}
+    .input-group label{display:block;margin-bottom:6px}
+    .input-group input,.input-group select,.input-group textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--muted);background-color:#222;color:#fff}
+    .input-group input:focus,.input-group select:focus,.input-group textarea:focus{outline:none;border-color:var(--gold)}
+    .form-btn{background:var(--gold);color:black;font-weight:800;padding:12px;border-radius:10px;border:none;cursor:pointer;width:100%}
+
+    /* Tables */
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{padding:10px 12px;border-bottom:1px solid rgba(212,175,55,.16);vertical-align:top}
+    th{text-align:left;color:#e9e9e9;font-weight:700}
+    tr:hover td{background:rgba(255,255,255,.02)}
+    .status{padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);font-size:12px}
+    .status.submitted{background:rgba(255,222,119,.1);border-color:rgba(255,222,119,.3)}
+    .status.in_review{background:rgba(0,123,255,.12);border-color:rgba(0,123,255,.28)}
+    .status.in_process{background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.28)}
+    .status.approved{background:rgba(47,210,122,.14);border-color:rgba(47,210,122,.36)}
+    .status.rejected{background:rgba(255,93,93,.12);border-color:rgba(255,93,93,.28)}
+    .inline{display:inline-flex;gap:8px;align-items:center}
+    .badge{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid rgba(212,175,55,.32);}
+    .badge.available{background:rgba(47,210,122,.14);color:#2fd27a;border-color:rgba(47,210,122,.36)}
+    .badge.busy{background:rgba(255,93,93,.12);color:#ff6b6b;border-color:rgba(255,93,93,.3)}
+    .news-meta{color:var(--muted);font-size:12px;margin-bottom:8px}
+    .news-title{font-weight:800;font-family:Montserrat;margin:6px 0 8px}
+    .btn-link{background:transparent;border:1px solid rgba(212,175,55,.35);color:var(--gold2);padding:8px 12px;border-radius:10px;cursor:pointer}
+    .u{display:flex;align-items:center;gap:10px}
+    .avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,rgba(212,175,55,.25),rgba(212,175,55,.08));border:1px solid rgba(212,175,55,.35);font-size:12px}
+    footer{border-top:1px solid rgba(212,175,55,.18);margin-top:40px}
+    footer .container{padding:18px 0;color:#cfcfcf;font-size:13px}
+  </style>
+</head>
+<body>
+<header>
+  <div class="container nav">
+    <div class="brand">
+      <div class="logo"></div>
+      <span>Валютный контроль</span>
+      <span id="roleTag" class="tag hidden">Админ</span>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="btnLogin">Войти</button>
+      <button class="btn btn-primary" id="btnRegister">Регистрация</button>
+      <button class="btn btn-primary hidden" id="btnCabinet">Личный кабинет</button>
+      <button class="btn btn-primary hidden" id="btnAdminPanel">Панель администратора</button>
+      <button class="btn btn-ghost hidden" id="btnLogout">Выйти</button>
+    </div>
+  </div>
+</header>
+
+<main id="mainContent">
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <h1>Защита клиентов: валютный контроль и Detrac Recovery</h1>
+        <p class="lead">Информация, новости и партнёры для возврата средств и борьбы с мошенниками.</p>
+      </div>
+      <div class="stat-card">
+        <span class="chip">AML/CFT</span>
+        <p>За 10 лет выплачено $1,23 млрд компенсаций</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <h2 class="section-title"><span class="bar"></span> Что такое валютный контроль</h2>
+      <p class="subtitle">Комплекс правил и процедур для законных валютных операций, защиты клиентов и соответствия требованиям регуляторов.</p>
+      <div class="cards">
+        <article class="card"><span class="chip">Соблюдение</span><h3>Правовые основания</h3><p>Проверка договоров, документов, контроль сроков репатриации выручки.</p></article>
+        <article class="card"><span class="chip">Мониторинг</span><h3>Риски и фрод</h3><p>Отслеживание мошенничества, дробление платежей, подмена бенефициара.</p></article>
+        <article class="card"><span class="chip">Detrac Recovery</span><h3>Оспаривание</h3><p>Процедура, которая помогает вернуть средства.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Новости -->
+  <section id="news">
+    <div class="container">
+      <h2 class="section-title"><span class="bar"></span> Новости и аналитика</h2>
+      <p class="subtitle">Короткая лента по мониторингу транзакций, регуляторике и возвратам средств.</p>
+      <div class="cards">
+        <article class="card">
+          <div class="news-meta">01.09.2025 • AML/СFT</div>
+          <div class="news-title">Европейские банки усилили проверки исходящих переводов</div>
+          <p>Риски дробления платежей и подмены бенефициара стали триггерами дополнительной верификации, что повышает шанс успешного оспаривания.</p>
+          <button class="btn-link" onclick="gotoConsultation()">Консультация по кейсу</button>
+        </article>
+        <article class="card">
+          <div class="news-meta">31.08.2025 • Казахстан</div>
+          <div class="news-title">Колл‑центры под видом службы безопасности банка</div>
+          <p>Злоумышленники убеждают перевести средства на «безопасный счёт». Настоящие банки так не делают — проверяйте номер и не диктуйте коды.</p>
+          <button class="btn-link" onclick="gotoConsultation()">Сообщить о попытке</button>
+        </article>
+        <article class="card">
+          <div class="news-meta">28.08.2025 • Card disputes</div>
+          <div class="news-title">Detrac Recovery: что прикладывать к заявлению</div>
+          <p>Подтверждения оплаты, переписка с продавцом, договоры и инвойсы. Чем больше верифицируемых данных — тем выше вероятность возврата.</p>
+          <button class="btn-link" onclick="gotoConsultation()">Подобрать юриста</button>
+        </article>
+        <article class="card">
+          <div class="news-meta">27.08.2025 • Литва</div>
+          <div class="news-title">Инвестиционные скамы: обещание дохода 3–5% в неделю</div>
+          <p>Распространены фальшивые платформы с «поддержкой» в мессенджерах. Признак скама — навязчивые звонки и просьбы установить ПО для удалённого доступа.</p>
+          <button class="btn-link" onclick="gotoConsultation()">Проверить площадку</button>
+        </article>
+        <article class="card">
+          <div class="news-meta">25.08.2025 • Казахстан</div>
+          <div class="news-title">Крипто‑розыгрыши в соцсетях и фейковые airdrop</div>
+          <p>Сбор seed‑фраз и логинов через формы «верификации кошелька». Никому и никогда не передавайте recovery‑фразы.</p>
+          <button class="btn-link" onclick="gotoConsultation()">Консультация по крипто‑кейсу</button>
+        </article>
+        <article class="card">
+          <div class="news-meta">22.08.2025 • Криптовалюта</div>
+          <div class="news-title">Биржи усиливают KYC для вывода средств</div>
+          <p>Дополнительные проверки адресов и источника средств позволяют быстрее замораживать мошеннические транзакции по запросу юристов.</p>
+          <button class="btn-link" onclick="gotoConsultation()">Разобрать ситуацию</button>
+        </article>
+        <article class="card">
+          <div class="news-meta">20.08.2025 • Литва</div>
+          <div class="news-title">Фишинговые письма от имени госорганов и банков</div>
+          <p>Письма копируют стиль VMI/банков и ведут на поддельные страницы входа. Проверяйте домены и сертификаты, не переходите по сокращённым ссылкам.</p>
+          <button class="btn-link" onclick="gotoConsultation()">Проверить письмо</button>
+        </article>
+        <article class="card">
+          <div class="news-meta">18.08.2025 • Казахстан</div>
+          <div class="news-title">QR‑платежи: поддельные чеки и реквизиты получателя</div>
+          <p>Сканирование «левого» QR может вести на счёт мошенника. Сверяйте данные получателя перед подтверждением перевода.</p>
+          <button class="btn-link" onclick="gotoConsultation()">Помощь с возвратом</button>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Партнёры -->
+  <section id="partners">
+    <div class="container">
+      <h2 class="section-title"><span class="bar"></span> Юридические партнёры</h2>
+      <p class="subtitle">Свободные юристы есть только в Interlex и BS. Остальные компании — временно без свободных специалистов.</p>
+      <div class="cards">
+        <article class="card">
+          <div class="inline" style="justify-content:space-between;width:100%">
+            <h3>ООО Interlex (Латвия)</h3>
+            <span class="badge available">Свободные юристы</span>
+          </div>
+          <ul>
+            <li>Анна Петрова</li>
+            <li>Елена Кравцева</li>
+            <li>Мария Озолиня</li>
+          </ul>
+          <button class="btn btn-primary" onclick="gotoConsultation()">Записаться</button>
+        </article>
+        <article class="card">
+          <div class="inline" style="justify-content:space-between;width:100%">
+            <h3>ООО BS (Казахстан)</h3>
+            <span class="badge available">Свободные юристы</span>
+          </div>
+          <ul>
+            <li>Айгуль Исаева</li>
+            <li>Ольга Гудеева</li>
+            <li>Азамат Саяжанов</li>
+          </ul>
+          <button class="btn btn-primary" onclick="gotoConsultation()">Записаться</button>
+        </article>
+        <article class="card">
+          <div class="inline" style="justify-content:space-between;width:100%">
+            <h3>ООО LexGuard (Польша)</h3>
+            <span class="badge busy">Нет свободных</span>
+          </div>
+          <p class="subtitle">Оставьте заявку — поставим в лист ожидания.</p>
+          <button class="btn btn-ghost" onclick="gotoConsultation()">Оставить заявку</button>
+        </article>
+        <article class="card">
+          <div class="inline" style="justify-content:space-between;width:100%">
+            <h3>JusPrima (Литва)</h3>
+            <span class="badge busy">Нет свободных</span>
+          </div>
+          <p class="subtitle">Работаем по листу ожидания.</p>
+        </article>
+        <article class="card">
+          <div class="inline" style="justify-content:space-between;width:100%">
+            <h3>BalticShield (Литва)</h3>
+            <span class="badge busy">Нет свободных</span>
+          </div>
+          <p class="subtitle">Запишитесь — уведомим при появлении мест.</p>
+        </article>
+        <article class="card">
+          <div class="inline" style="justify-content:space-between;width:100%">
+            <h3>KazLex (Казахстан)</h3>
+            <span class="badge busy">Нет свободных</span>
+          </div>
+          <p class="subtitle">Очередь на консультации открыта.</p>
+        </article>
+        <article class="card">
+          <div class="inline" style="justify-content:space-between;width:100%">
+            <h3>SteppeLegal (Казахстан)</h3>
+            <span class="badge busy">Нет свободных</span>
+          </div>
+          <p class="subtitle">Оставьте контакты — вернёмся при освобождении слотов.</p>
+        </article>
+        <article class="card">
+          <div class="inline" style="justify-content:space-between;width:100%">
+            <h3>NordLex (Латвия)</h3>
+            <span class="badge busy">Нет свободных</span>
+          </div>
+        </article>
+        <article class="card">
+          <div class="inline" style="justify-content:space-between;width:100%">
+            <h3>Vistula Law (Польша)</h3>
+            <span class="badge busy">Нет свободных</span>
+          </div>
+        </article>
+        <article class="card">
+          <div class="inline" style="justify-content:space-between;width:100%">
+            <h3>Central Asia Legal (Казахстан)</h3>
+            <span class="badge busy">Нет свободных</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="container">
+    © <span id="y"></span> Валютный контроль — информационный сервис. Не является публичной офертой.
+  </div>
+</footer>
+
+<section id="cabinet" class="hidden">
+  <div class="container">
+    <h2 class="section-title"><span class="bar"></span> Личный кабинет</h2>
+    <div id="userClaimsSection">
+      <div id="claimFormSection" class="cards">
+        <form id="claimForm" class="card wide">
+          <h3>Подача заявления о мошенничестве</h3>
+          <div class="cards" style="grid-template-columns:repeat(12,1fr);gap:12px">
+            <label style="grid-column:span 6">ФИО<input id="fio" class="input-group-input" required></label>
+            <label style="grid-column:span 6">Телефон<input id="phone" class="input-group-input" required></label>
+            <label style="grid-column:span 6">Email<input id="email" class="input-group-input" type="email" required></label>
+            <label style="grid-column:span 3">Дата<input id="incident_date" class="input-group-input" type="date" required></label>
+            <label style="grid-column:span 3">Сумма (USD)<input id="amount" class="input-group-input" type="number" min="0" required></label>
+            <label style="grid-column:span 4">Метод
+              <select id="method" class="input-group-input" required>
+                <option value="">Выберите…</option>
+                <option>Банковский перевод</option>
+                <option>Карта</option>
+                <option>Криптовалюта</option>
+              </select>
+            </label>
+            <label style="grid-column:span 4">Компания<input id="company" class="input-group-input"></label>
+            <label style="grid-column:span 4">Счёт/банк<input id="account_bank" class="input-group-input" required></label>
+            <label style="grid-column:span 12">Файлы<input id="files" class="input-group-input" type="file" multiple></label>
+          </div>
+          <div class="inline" style="margin-top:10px">
+            <button type="button" id="buildClaim" class="btn btn-primary">Сформировать заявление</button>
+            <button type="button" id="sendClaim" class="btn btn-ghost hidden">Отправить</button>
+          </div>
+        </form>
+        <div id="claimPreview" class="card wide hidden"></div>
+      </div>
+      <div class="card wide" style="margin-top:20px">
+        <h3>Мои заявления</h3>
+        <div id="myClaims"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="adminPanel" class="hidden">
+  <div class="container">
+    <h2 class="section-title"><span class="bar"></span> Панель администратора</h2>
+    <div class="card wide">
+      <div class="inline" style="justify-content:space-between;width:100%">
+        <h3>Все заявления</h3>
+        <button id="reloadAdmin" class="btn btn-ghost">Обновить</button>
+      </div>
+      <div id="adminClaims"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Аутентификация -->
+<div id="authModal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <span class="close-btn" id="authClose">&times;</span>
+    <h2 id="authTitle"></h2>
+    <div class="input-group">
+      <label for="authEmail">Email / логин</label>
+      <input type="email" id="authEmail" required>
+    </div>
+    <div class="input-group" id="passwordGroup">
+      <label for="authPassword">Пароль</label>
+      <input type="password" id="authPassword" required>
+    </div>
+    <button class="btn form-btn" id="authSubmit"></button>
+    <p id="authMessage" style="color:#ff8b8b; margin-top:10px;"></p>
+  </div>
+</div>
+
+<!-- Модальное окно для админа -->
+<div id="adminModal" class="modal" aria-hidden="true">
+  <div class="modal-content" style="width:min(600px,92%)">
+    <span class="close-btn" id="adminModalClose">&times;</span>
+    <h2 id="adminModalTitle"></h2>
+    <div id="adminModalContent"></div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://prvnidskpxzaapprozgh.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydm5pZHNrcHh6YWFwcHJvemdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzODcxNjcsImV4cCI6MjA3MTk2MzE2N30.-Kqto54aIyM9524NTp001zYzOOI_9KZs91N-9Zam3Yg';
+
+  const ADMIN_ALIAS = 'admin555';
+  const ADMIN_EMAIL = 'admin@valcontrol.info';
+
+  let sb;
+  function initSupabase(){
+    if (!window.supabase) {
+      console.error('Supabase UMD не загрузился');
+      return false;
+    }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('App init ok');
+    hydrate();
+    return true;
+  }
+  window.addEventListener('load', () => {
+    if (!initSupabase()) {
+      const retry = setInterval(() => { if (initSupabase()) clearInterval(retry); }, 300);
+    }
+  });
+
+  const btnLogin = document.getElementById('btnLogin');
+  const btnRegister = document.getElementById('btnRegister');
+  const btnCabinet = document.getElementById('btnCabinet');
+  const btnAdminPanel = document.getElementById('btnAdminPanel');
+  const btnLogout = document.getElementById('btnLogout');
+  const roleTag = document.getElementById('roleTag');
+  const mainContent = document.getElementById('mainContent');
+  const cabinetSection = document.getElementById('cabinet');
+  const adminPanel = document.getElementById('adminPanel');
+  const claimForm = document.getElementById('claimForm');
+  const buildClaimBtn = document.getElementById('buildClaim');
+  const sendClaimBtn = document.getElementById('sendClaim');
+  const claimPreview = document.getElementById('claimPreview');
+  const myClaims = document.getElementById('myClaims');
+  const adminClaims = document.getElementById('adminClaims');
+  const reloadAdmin = document.getElementById('reloadAdmin');
+  const authModal = document.getElementById('authModal');
+  const authClose = document.getElementById('authClose');
+  const authTitle = document.getElementById('authTitle');
+  const authEmail = document.getElementById('authEmail');
+  const authPassword = document.getElementById('authPassword');
+  const authSubmit = document.getElementById('authSubmit');
+  const authMessage = document.getElementById('authMessage');
+  const passwordGroup = document.getElementById('passwordGroup');
+  const adminModal = document.getElementById('adminModal');
+  const adminModalClose = document.getElementById('adminModalClose');
+  const adminModalTitle = document.getElementById('adminModalTitle');
+  const adminModalContent = document.getElementById('adminModalContent');
+
+  let isLogin = true;
+  const state = { user: null, profile: null };
+
+  const fmtUSD = n => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(Number(n||0));
+  const fmtDate = d => new Date(d).toLocaleDateString('ru-RU');
+
+  function show(el){
+    if (!el) return;
+    if (el.classList?.contains('modal')) { el.style.display = 'flex'; return; }
+    el.classList?.remove('hidden');
+  }
+  function hide(el){
+    if (!el) return;
+    if (el.classList?.contains('modal')) { el.style.display = 'none'; return; }
+    el.classList?.add('hidden');
+  }
+
+  function setStatusPill(status){
+    return `<span class="status ${status}">${status.replace('_',' ')}</span>`;
+  }
+
+  // Auth modal events
+  btnLogin.addEventListener('click', () => openAuth(true));
+  btnRegister.addEventListener('click', () => openAuth(false));
+  btnCabinet.addEventListener('click', () => {
+    hide(mainContent);
+    hide(adminPanel);
+    show(cabinetSection);
+    renderMyClaims();
+  });
+  btnAdminPanel.addEventListener('click', () => {
+    hide(mainContent);
+    hide(cabinetSection);
+    show(adminPanel);
+    renderAdminClaims();
+  });
+  btnLogout.addEventListener('click', async () => { 
+    if (!sb) return alert('Инициализация...'); 
+    await sb.auth.signOut(); 
+    location.reload(); 
+  });
+
+  function openAuth(login){
+    isLogin = !!login;
+    authTitle.textContent = login ? 'Вход' : 'Регистрация';
+    authSubmit.textContent = login ? 'Войти' : 'Зарегистрироваться';
+    authMessage.textContent = '';
+    authEmail.value = '';
+    authPassword.value = '';
+    show(authModal);
+  }
+
+  authClose.onclick = () => hide(authModal);
+  window.addEventListener('click', (e) => { if (e.target === authModal) hide(authModal); });
+  [authEmail, authPassword].forEach(inp => inp.addEventListener('keyup', e => { if (e.key === 'Enter') authSubmit.click(); }));
+
+  authSubmit.addEventListener('click', async () => { if (!sb) return alert('Инициализация...');
+    const rawLogin = authEmail.value.trim();
+    let email = rawLogin;
+    const isAdminAlias = rawLogin.toLowerCase() === ADMIN_ALIAS;
+    if (isAdminAlias) email = ADMIN_EMAIL;
+    const password = authPassword.value.trim();
+    authMessage.textContent = '';
+    try {
+      if (isLogin) {
+        if (isAdminAlias && password !== ADMIN_ALIAS) throw new Error('Неверный пароль');
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        hide(authModal);
+        await hydrate();
+      } else {
+        if (isAdminAlias) { throw new Error('Для регистрации укажите реальный email, алиас недопустим'); }
+        const redirectTo = `${location.origin}${location.pathname}`;
+        const { data, error } = await sb.auth.signUp({
+          email, password, options: { emailRedirectTo: redirectTo }
+        });
+        if (error) throw error;
+        if (data.user) {
+          authMessage.style.color = '#7CFC98';
+          authMessage.textContent = 'Проверьте почту и подтвердите email.';
+          setTimeout(()=>hide(authModal), 3000);
+        }
+      }
+    } catch(err){
+      authMessage.style.color = '#ff8b8b';
+      authMessage.textContent = err.message || 'Ошибка';
+    }
+  });
+
+  async function loadProfile(){
+    if (!state.user) { state.profile = null; return; }
+    const { data, error } = await sb.from('profiles').select('id, role, email, full_name').eq('id', state.user.id).maybeSingle();
+    if (!error) state.profile = data; else state.profile = null;
+  }
+
+  function updateUI(){
+    if (state.user){
+      hide(btnLogin); hide(btnRegister); show(btnLogout); hide(mainContent);
+      if (state.profile?.role === 'admin'){ show(btnAdminPanel); hide(btnCabinet); show(adminPanel); hide(cabinetSection); show(roleTag); } else { show(btnCabinet); hide(btnAdminPanel); show(cabinetSection); hide(adminPanel); hide(roleTag); }
+      renderMyClaims();
+      if (state.profile?.role === 'admin') renderAdminClaims();
+    } else {
+      show(btnLogin); show(btnRegister); hide(btnCabinet); hide(btnAdminPanel); hide(btnLogout); show(mainContent); hide(cabinetSection); hide(adminPanel); hide(roleTag);
+      myClaims.innerHTML = '';
+      adminClaims.innerHTML = '';
+    }
+  }
+
+  async function hydrate(){
+    const { data: { session } } = await sb.auth.getSession();
+    state.user = session?.user || null;
+    if (state.user) await loadProfile();
+    updateUI();
+  }
+
+  sb.auth.onAuthStateChange(async (_evt, session) => {
+    state.user = session?.user || null;
+    if (state.user) await loadProfile(); else state.profile = null;
+    updateUI();
+  });
+
+  // Claims: preview + send
+  buildClaimBtn.addEventListener('click', () => {
+    const fio = document.getElementById('fio').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const incident_date = document.getElementById('incident_date').value;
+    const amount = document.getElementById('amount').value;
+    const method = document.getElementById('method').value;
+    const company = document.getElementById('company').value.trim();
+    const account_bank = document.getElementById('account_bank').value.trim();
+
+    if(!fio || !phone || !email || !incident_date || !amount || !method || !account_bank){
+      alert('Заполните обязательные поля');
+      return;
+    }
+
+    claimPreview.innerHTML = `
+      <h3>Предпросмотр заявления</h3>
+      <p><b>ФИО:</b> ${escapeHtml(fio)}</p>
+      <p><b>Телефон:</b> ${escapeHtml(phone)}</p>
+      <p><b>Email:</b> ${escapeHtml(email)}</p>
+      <p><b>Дата инцидента:</b> ${fmtDate(incident_date)}</p>
+      <p><b>Сумма:</b> ${fmtUSD(amount)}</p>
+      <p><b>Метод:</b> ${escapeHtml(method)}</p>
+      ${company ? `<p><b>Компания:</b> ${escapeHtml(company)}</p>` : ''}
+      <p><b>Счёт/банк:</b> ${escapeHtml(account_bank)}</p>
+    `;
+    show(claimPreview);
+    show(sendClaimBtn);
+  });
+
+  sendClaimBtn.addEventListener('click', async () => {
+    sendClaimBtn.disabled = true; sendClaimBtn.textContent = 'Отправляем…';
+    try{
+      if (!state.user) throw new Error('Необходимо войти');
+      const payload = {
+        user_id: state.user.id,
+        fio: document.getElementById('fio').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        incident_date: document.getElementById('incident_date').value,
+        amount: Number(document.getElementById('amount').value),
+        method: document.getElementById('method').value,
+        company: document.getElementById('company').value.trim() || null,
+        account_bank: document.getElementById('account_bank').value.trim(),
+        status: 'submitted'
+      };
+      const { data: claim, error } = await sb.from('claims').insert(payload).select().single();
+      if (error) throw error;
+      const files = document.getElementById('files').files;
+      if (files && files.length){
+        for (const f of files){
+          const path = `${state.user.id}/${claim.id}/${Date.now()}_${sanitizeFilename(f.name)}`;
+          const { error: upErr } = await sb.storage.from('claim-files').upload(path, f, { upsert:false });
+          if (upErr) console.warn('Upload error', upErr);
+          else await sb.from('claim_files').insert({ claim_id: claim.id, path });
+        }
+      }
+
+      claimForm.reset();
+      hide(sendClaimBtn); hide(claimPreview);
+      renderMyClaims();
+      alert('Заявление отправлено!');
+    } catch(err){
+      alert(err.message || 'Ошибка');
+    } finally {
+      sendClaimBtn.disabled = false; sendClaimBtn.textContent = 'Отправить';
+    }
+  });
+
+  // User Claims UI
+  async function renderMyClaims(){
+    if (!state.user){ myClaims.innerHTML = ''; return; }
+    const { data, error } = await sb.from('claims').select('id, created_at, case_number, status, history, amount, method, phone, email').eq('user_id', state.user.id).order('created_at',{ascending:false});
+    if (error){ myClaims.innerHTML = '<p>Ошибка загрузки</p>'; return; }
+    if (!data.length){ myClaims.innerHTML = '<p>Вы ещё не подавали заявления.</p>'; return; }
+    myClaims.innerHTML = data.map(r => `
+      <div class="card wide" style="margin-bottom:20px;padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h4 style="margin:0;">Дело #${r.case_number || 'Ожидает'}: ${r.case_number ? setStatusPill(r.status) : 'Ожидает...'}</h4>
+          <span style="font-size:12px;color:var(--muted);">${new Date(r.created_at).toLocaleString('ru-RU')}</span>
+        </div>
+        <p><b>Контакты:</b> ${escapeHtml(r.email)}, ${escapeHtml(r.phone)}</p>
+        <p><b>Сумма:</b> ${fmtUSD(r.amount)} (${escapeHtml(r.method)})</p>
+        <hr style="border-color:rgba(212,175,55,.16);margin:15px 0;" />
+        <h4 style="margin:0 0 10px;">История взаимодействия</h4>
+        ${renderHistory(r.history)}
+      </div>
+    `).join('');
+  }
+
+  function renderHistory(history){
+    if (!history?.length) return '<p>Нет обновлений.</p>';
+    const sorted = history.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    return `
+      <ul style="padding:0;margin:0;list-style:none">
+        ${sorted.map(item => `
+          <li style="margin-bottom:15px;padding-bottom:15px;border-bottom:1px dashed #222;font-size:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;color:var(--muted);">
+              <span>Комментарий администратора</span>
+              <small>${new Date(item.created_at).toLocaleString('ru-RU')}</small>
+            </div>
+            <p style="margin:8px 0;line-height:1.6;">${escapeHtml(item.comment)}</p>
+            ${item.files?.length ? `<div><b>Прикреплённые файлы:</b><br>${item.files.map(f => `<a href="${f.url}" target="_blank" style="font-size:12px;display:block;margin-top:4px;">${f.name}</a>`).join('')}</div>` : ''}
+          </li>
+        `).join('')}
+      </ul>`;
+  }
+
+  // Admin UI
+  async function renderAdminClaims(){
+    const { data, error } = await sb.from('claims').select('*, claim_files(path)').order('created_at',{ascending:false});
+    if (error){ adminClaims.innerHTML = '<p>Ошибка загрузки</p>'; return; }
+    if (!data.length){ adminClaims.innerHTML = '<p>Пока нет заявлений.</p>'; return; }
+    adminClaims.innerHTML = `
+      <table>
+        <thead><tr><th>ID</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr></thead>
+        <tbody>
+          ${data.map(r => `<tr data-id="${r.id}">
+            <td>#${r.id}</td>
+            <td>${escapeHtml(r.fio)}<br><small>${escapeHtml(r.email)}</small></td>
+            <td>${fmtUSD(r.amount)}</td>
+            <td>${setStatusPill(r.status)}</td>
+            <td><button class="btn-link view-claim" data-id="${r.id}">Просмотр</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    adminClaims.querySelectorAll('.view-claim').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const claimId = btn.dataset.id;
+        const claimData = data.find(c => String(c.id) === claimId);
+        if (claimData) showAdminModal(claimData);
+      });
+    });
+  }
+
+  async function showAdminModal(claim){
+    adminModalTitle.textContent = `Заявление #${claim.id}`;
+    const fileLinks = claim.claim_files.map(f => {
+      const { data } = sb.storage.from('claim-files').getPublicUrl(f.path);
+      const fileName = f.path.split('/').pop().substring(14);
+      return `<a href="${data.publicUrl}" target="_blank">${fileName}</a>`;
+    }).join('<br>');
+
+    const historyHTML = `
+      <h4>История дела</h4>
+      <ul style="padding:0;margin:0;list-style:none">
+        ${(claim.history || []).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).map(item => `
+          <li style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #222">
+            <small style="color:var(--muted);font-size:11px">${new Date(item.created_at).toLocaleString('ru-RU')}</small>
+            <p style="margin:4px 0">${escapeHtml(item.comment)}</p>
+            ${item.files?.length ? `<div>${item.files.map(f => `<a href="${f.url}" target="_blank" style="font-size:12px;display:block">${f.name}</a>`).join('')}</div>` : ''}
+          </li>
+        `).join('')}
+      </ul>
+    `;
+
+    adminModalContent.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+        <div>
+          <h4>Детали заявления</h4>
+          <p><b>Номер дела:</b> ${claim.case_number || 'Не присвоен'}</p>
+          <p><b>ФИО:</b> ${escapeHtml(claim.fio)}</p>
+          <p><b>Телефон:</b> ${escapeHtml(claim.phone)}</p>
+          <p><b>Email:</b> ${escapeHtml(claim.email)}</p>
+          <p><b>Дата инцидента:</b> ${fmtDate(claim.incident_date)}</p>
+          <p><b>Сумма:</b> ${fmtUSD(claim.amount)}</p>
+          <p><b>Метод:</b> ${escapeHtml(claim.method)}</p>
+          <p><b>Компания:</b> ${escapeHtml(claim.company)}</p>
+          <p><b>Счёт/банк:</b> ${escapeHtml(claim.account_bank)}</p>
+          <p><b>Файлы от клиента:</b><br>${fileLinks || 'Нет'}</p>
+        </div>
+        <div>
+          <label class="input-group"><b>Статус</b>
+            <select id="adminStatusSelect">
+              ${['submitted','in_review','in_process','approved','rejected'].map(opt => `<option value="${opt}" ${opt===claim.status?'selected':''}>${opt.replace('_',' ')}</option>`).join('')}
+            </select>
+          </label>
+          <label class="input-group"><b>Номер дела (если присвоен)</b>
+            <input id="adminCaseNumber" value="${escapeHtml(claim.case_number || '')}" />
+          </label>
+          <label class="input-group"><b>Комментарий для клиента</b>
+            <textarea id="adminComment" style="width:100%;height:100px"></textarea>
+          </label>
+          <label class="input-group"><b>Файлы для клиента</b>
+            <input type="file" multiple id="adminFiles" />
+          </label>
+          <button id="adminUpdateBtn" class="btn form-btn" style="margin-top:10px">Обновить</button>
+        </div>
+      </div>
+      ${historyHTML}
+    `;
+
+    adminModal.dataset.claimId = claim.id;
+    show(adminModal);
+
+    document.getElementById('adminUpdateBtn').onclick = async () => {
+      const newStatus = document.getElementById('adminStatusSelect').value;
+      const newCaseNumber = document.getElementById('adminCaseNumber').value.trim();
+      const comment = document.getElementById('adminComment').value.trim();
+      const files = document.getElementById('adminFiles').files;
+
+      if (!comment && files.length === 0 && newStatus === claim.status && newCaseNumber === claim.case_number) {
+        alert('Нет изменений для сохранения');
+        return;
+      }
+      
+      try {
+        const updates = { status: newStatus, case_number: newCaseNumber };
+        const { data: updatedClaim, error } = await sb.from('claims')
+          .update(updates)
+          .eq('id', claim.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (comment || files.length > 0) {
+          const newHistoryItem = {
+            created_at: new Date().toISOString(),
+            comment: comment || '',
+            files: []
+          };
+
+          for (const f of files) {
+            const path = `admin-files/${claim.id}/${Date.now()}_${sanitizeFilename(f.name)}`;
+            const { error: upErr } = await sb.storage.from('claim-files').upload(path, f, { upsert: false });
+            if (upErr) console.warn('Upload error', upErr);
+            else {
+              const { data: publicUrlData } = sb.storage.from('claim-files').getPublicUrl(path);
+              newHistoryItem.files.push({ name: sanitizeFilename(f.name), url: publicUrlData.publicUrl });
+            }
+          }
+
+          const currentHistory = updatedClaim.history || [];
+          const { error: historyError } = await sb.from('claims')
+            .update({ history: [...currentHistory, newHistoryItem] })
+            .eq('id', claim.id);
+          if (historyError) throw historyError;
+        }
+
+        hide(adminModal);
+        renderAdminClaims();
+        alert('Заявление обновлено');
+      } catch(err) {
+        alert('Ошибка при обновлении: ' + err.message);
+      }
+    };
+  }
+  
+  adminModalClose.onclick = () => hide(adminModal);
+  window.addEventListener('click', (e) => { if (e.target === adminModal) hide(adminModal); });
+
+  reloadAdmin?.addEventListener('click', renderAdminClaims);
+
+  // Security helpers
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+  }
+  function sanitizeFilename(name){
+    return name.replace(/[^a-zA-Z0-9_.-]/g,'_').slice(0,120);
+  }
+
+  // Footer year
+  (function(){ try{ document.getElementById('y').textContent = new Date().getFullYear(); }catch(e){} })();
+</script>
+</body>
+</html>
