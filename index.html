@@ -7,15 +7,20 @@
   <meta name="description" content="Валютный контроль, новости о мониторинге мошеннических транзакций и процедура оспаривания платежа Detrac Recovery."/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/@supabase/supabase-js@2.46.1/dist/umd/supabase.js"></script>
+  <link rel="preload" as="image" href="assets/img/hero-card.png">
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2.46.1/dist/umd/supabase.js"></script>
   <style>
     :root{
-      --bg:#0a0a0a; --bg2:#0f0f10; --card:#101012; --muted:#b8b8b8; --gold:#d4af37; --gold2:#ffde77;
-      --ok:#2fd27a; --bad:#ff5d5d; --process:#ffc107;
+      --bg:#0a0a0a; --bg2:#0f0f10; --card:#101012; --muted:#b8b8b8;
+      --gold:#d4af37; --gold2:#ffde77; --ink:#161616;
+      --ok:#2fd27a; --bad:#ff5d5d; --warn:#ffc107;
     }
     *{box-sizing:border-box}
-    body{margin:0;color:#f5f5f5;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:radial-gradient(1200px 600px at 10% -10%,rgba(212,175,55,.08),transparent 60%),linear-gradient(180deg,#0a0a0a,#0b0b0b);line-height:1.6;overflow-x:hidden}
-    a{color:var(--gold)}
+    body{margin:0;color:#f5f5f5;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:
+      radial-gradient(1200px 600px at 10% -10%,rgba(212,175,55,.08),transparent 60%),
+      linear-gradient(180deg,#0a0a0a,#0b0b0b);line-height:1.6;overflow-x:hidden}
+    a{color:var(--gold);text-decoration:none}
+    img{max-width:100%;height:auto;display:block}
     .container{width:min(1200px,92vw);margin:0 auto;}
     header{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px) saturate(140%);background:rgba(10,10,10,.8);border-bottom:1px solid rgba(212,175,55,.22)}
     .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
@@ -23,16 +28,41 @@
     .logo{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,rgba(212,175,55,.22),rgba(212,175,55,.06));border:1px solid rgba(212,175,55,.38)}
     .brand span{font-family:Montserrat;font-size:18px}
     .tag{font-size:12px;border:1px solid rgba(212,175,55,.4);padding:2px 8px;border-radius:999px;margin-left:8px;color:var(--gold2)}
-    .btn{appearance:none;border:none;cursor:pointer;font-weight:700;border-radius:14px;padding:10px 14px;transition:.2s;outline:none;display:inline-flex;gap:10px;align-items:center}
-    .btn-primary{background:linear-gradient(90deg,rgba(212,175,55,.22),rgba(255,222,119,.18));color:#fff;border:1px solid rgba(212,175,55,.45)}
-    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(212,175,55,.18)}
-    .btn-ghost{background:transparent;color:var(--gold2);border:1px dashed rgba(212,175,55,.45)}
+    /* Fancy buttons */
+    .btn{appearance:none;border:none;cursor:pointer;font-weight:800;border-radius:16px;padding:12px 16px;transition:transform .12s ease, box-shadow .2s ease, background .25s ease;outline:none;display:inline-flex;gap:10px;align-items:center;position:relative;isolation:isolate}
+    .btn::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(212,175,55,.5),rgba(255,222,119,.2));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.7}
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{background:
+      radial-gradient(120% 120% at 0% 0%,rgba(255,222,119,.18),transparent 40%),
+      linear-gradient(90deg,rgba(212,175,55,.25),rgba(212,175,55,.12));color:#fff}
+    .btn-primary:hover{box-shadow:0 10px 28px rgba(212,175,55,.24), inset 0 0 0 999px rgba(255,255,255,.02);transform:translateY(-1px)}
+    .btn-ghost{background:rgba(255,255,255,.02);color:var(--gold2)}
+    .btn-ghost:hover{box-shadow:0 8px 22px rgba(212,175,55,.16)}
+    .btn-link{background:rgba(255,255,255,.02);border-radius:12px;padding:8px 12px;border:1px solid rgba(212,175,55,.35);color:var(--gold2);cursor:pointer}
+    .btn-sm{padding:8px 12px;border-radius:12px;font-weight:700}
     .hidden{display:none!important}
+    /* Inputs – glass fields */
+    .field{display:flex;flex-direction:column;gap:6px}
+    .label{font-size:12px;color:#dcdcdc}
+    .control{appearance:none;width:100%;padding:12px 14px;border-radius:14px;background:
+      linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+      border:1px solid rgba(212,175,55,.2);color:#fff;transition:border .2s, box-shadow .2s, background .2s}
+    .control::placeholder{color:#9d9d9d}
+    .control:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 6px rgba(212,175,55,.12)}
+    textarea.control{min-height:120px;resize:vertical}
+    /* Layout */
     .hero{padding:48px 0 28px}
     .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:end}
+    @media (max-width: 860px){ .hero-grid{grid-template-columns:1fr;align-items:start} }
     h1{font-family:Montserrat;font-size:40px;line-height:1.1;margin:0 0 12px;font-weight:800;background:linear-gradient(180deg,#fff,#f7f7f7 60%,var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
     .lead{color:#e6e6e6;font-size:18px}
     .stat-card{background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.25);border-radius:18px;padding:18px}
+    .hero-media{position:relative;min-height:260px;border-radius:22px;overflow:hidden;border:1px solid rgba(212,175,55,.25);background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))}
+    .hero-media .shine{position:absolute;inset:0;background:radial-gradient(800px 300px at 10% -10%,rgba(212,175,55,.12),transparent 60%);pointer-events:none}
+    .banner{margin:24px 0;border-radius:22px;overflow:hidden;position:relative;border:1px solid rgba(212,175,55,.25)}
+    .banner::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.2),rgba(10,10,10,.8));z-index:1}
+    .banner img{width:100%;height:320px;object-fit:cover;display:block}
+    .banner h3{position:absolute;left:24px;bottom:18px;z-index:2;margin:0;font-family:Montserrat;font-size:28px}
     .cards{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
     .card{grid-column:span 4;background:rgba(255,255,255,.02);border:1px solid rgba(212,175,55,.16);border-radius:16px;padding:16px}
     .card.wide{grid-column:span 12}
@@ -40,19 +70,7 @@
     .section-title{font-family:Montserrat;font-size:24px;font-weight:800;margin:0 0 14px;display:flex;gap:10px;align-items:center}
     .bar{width:6px;height:18px;border-radius:2px;background:linear-gradient(180deg,var(--gold),var(--gold2))}
     .subtitle{color:#d8d8d8;margin:-6px 0 16px}
-
-    /* Modal */
-    .modal {display:none;position:fixed;z-index:100;left:0;top:0;width:100%;height:100%;overflow:auto;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);justify-content:center;align-items:center}
-    .modal-content {background-color:var(--card);border:1px solid var(--gold);padding:26px;border-radius:16px;width:min(420px,92%)}
-    .close-btn {color:#aaa;float:right;font-size:26px;font-weight:bold}
-    .close-btn:hover,.close-btn:focus{color:white;cursor:pointer}
-    .input-group{margin-bottom:14px}
-    .input-group label{display:block;margin-bottom:6px}
-    .input-group input,.input-group select,.input-group textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--muted);background-color:#222;color:#fff}
-    .input-group input:focus,.input-group select:focus,.input-group textarea:focus{outline:none;border-color:var(--gold)}
-    .form-btn{background:var(--gold);color:black;font-weight:800;padding:12px;border-radius:10px;border:none;cursor:pointer;width:100%}
-
-    /* Tables */
+    /* Tables & status */
     table{width:100%;border-collapse:separate;border-spacing:0}
     th,td{padding:10px 12px;border-bottom:1px solid rgba(212,175,55,.16);vertical-align:top}
     th{text-align:left;color:#e9e9e9;font-weight:700}
@@ -63,15 +81,18 @@
     .status.in_process{background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.28)}
     .status.approved{background:rgba(47,210,122,.14);border-color:rgba(47,210,122,.36)}
     .status.rejected{background:rgba(255,93,93,.12);border-color:rgba(255,93,93,.28)}
-    .inline{display:inline-flex;gap:8px;align-items:center}
-    .badge{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid rgba(212,175,55,.32);}
-    .badge.available{background:rgba(47,210,122,.14);color:#2fd27a;border-color:rgba(47,210,122,.36)}
-    .badge.busy{background:rgba(255,93,93,.12);color:#ff6b6b;border-color:rgba(255,93,93,.3)}
-    .news-meta{color:var(--muted);font-size:12px;margin-bottom:8px}
-    .news-title{font-weight:800;font-family:Montserrat;margin:6px 0 8px}
-    .btn-link{background:transparent;border:1px solid rgba(212,175,55,.35);color:var(--gold2);padding:8px 12px;border-radius:10px;cursor:pointer}
-    .u{display:flex;align-items:center;gap:10px}
-    .avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,rgba(212,175,55,.25),rgba(212,175,55,.08));border:1px solid rgba(212,175,55,.35);font-size:12px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.16)}
+    .pill.bad{background:rgba(255,93,93,.1);color:#ff9b9b;border-color:rgba(255,93,93,.36)}
+    .pill.warn{background:rgba(255,193,7,.12);color:#ffd46a;border-color:rgba(255,193,7,.36)}
+    .pill.ok{background:rgba(47,210,122,.14);color:#7cf4af;border-color:rgba(47,210,122,.36)}
+    /* Gallery */
+    .gallery{margin-top:14px;display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    .gallery .g{grid-column:span 6;background:rgba(255,255,255,.02);border:1px solid rgba(212,175,55,.16);border-radius:18px;overflow:hidden}
+    .gallery .cap{padding:10px 14px;color:#dcdcdc;font-size:13px}
+    /* Modals */
+    .modal {display:none;position:fixed;z-index:100;left:0;top:0;width:100%;height:100%;overflow:auto;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);justify-content:center;align-items:center}
+    .modal-content {background-color:var(--card);border:1px solid var(--gold);padding:26px;border-radius:16px;width:min(420px,92%)}
+    .close-btn {color:#aaa;float:right;font-size:26px;font-weight:bold;cursor:pointer}
     footer{border-top:1px solid rgba(212,175,55,.18);margin-top:40px}
     footer .container{padding:18px 0;color:#cfcfcf;font-size:13px}
   </style>
@@ -100,10 +121,18 @@
       <div>
         <h1>Защита клиентов: валютный контроль и Detrac Recovery</h1>
         <p class="lead">Информация, новости и партнёры для возврата средств и борьбы с мошенниками.</p>
+        <div class="banner">
+          <img src="assets/img/currency-board.jpg" width="1200" height="320" alt="Currency control dashboard" loading="lazy">
+          <h3>Мониторинг транзакций и споры по платежам</h3>
+        </div>
       </div>
-      <div class="stat-card">
-        <span class="chip">AML/CFT</span>
-        <p>За 10 лет выплачено $1,23 млрд компенсаций</p>
+      <div class="hero-media">
+        <img src="assets/img/hero-card.png" width="900" height="600" alt="Прозрачная карта с графиком" decoding="async">
+        <div class="shine"></div>
+        <div class="stat-card" style="position:absolute;right:12px;bottom:12px">
+          <span class="chip">AML/CFT</span>
+          <p style="margin:6px 0 0">За 10 лет выплачено $1,23 млрд компенсаций</p>
+        </div>
       </div>
     </div>
   </section>
@@ -117,6 +146,17 @@
         <article class="card"><span class="chip">Мониторинг</span><h3>Риски и фрод</h3><p>Отслеживание мошенничества, дробление платежей, подмена бенефициара.</p></article>
         <article class="card"><span class="chip">Detrac Recovery</span><h3>Оспаривание</h3><p>Процедура, которая помогает вернуть средства.</p></article>
       </div>
+
+      <div class="gallery">
+        <div class="g" style="grid-column:span 7;">
+          <img src="assets/img/currency-board.jpg" alt="Графики и карта мира — Currency Control" loading="lazy">
+          <div class="cap">Аналитическая панель: глобальные графики и индикаторы.</div>
+        </div>
+        <div class="g" style="grid-column:span 5;">
+          <img src="assets/img/hero-card.png" alt="Стеклянная карта с кривыми роста" loading="lazy">
+          <div class="cap">Визуализация платежной карты и динамики транзакций.</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -129,175 +169,112 @@
         <article class="card">
           <div class="news-meta">01.09.2025 • AML/СFT</div>
           <div class="news-title">Европейские банки усилили проверки исходящих переводов</div>
-          <p>Риски дробления платежей и подмены бенефициара стали триггерами дополнительной верификации, что повышает шанс успешного оспаривания.</p>
+          <p>Риски дробления платежей и подмены бенефициара стали триггерами дополнительной верификации.</p>
           <button class="btn-link" onclick="gotoConsultation()">Консультация по кейсу</button>
         </article>
         <article class="card">
           <div class="news-meta">31.08.2025 • Казахстан</div>
-          <div class="news-title">Колл‑центры под видом службы безопасности банка</div>
-          <p>Злоумышленники убеждают перевести средства на «безопасный счёт». Настоящие банки так не делают — проверяйте номер и не диктуйте коды.</p>
+          <div class="news-title">Колл-центры под видом службы безопасности банка</div>
+          <p>Проверяйте номер банка и никогда не диктуйте коды.</p>
           <button class="btn-link" onclick="gotoConsultation()">Сообщить о попытке</button>
         </article>
         <article class="card">
           <div class="news-meta">28.08.2025 • Card disputes</div>
           <div class="news-title">Detrac Recovery: что прикладывать к заявлению</div>
-          <p>Подтверждения оплаты, переписка с продавцом, договоры и инвойсы. Чем больше верифицируемых данных — тем выше вероятность возврата.</p>
+          <p>Подтверждения оплат, переписка, договоры и инвойсы повышают шансы на возврат.</p>
           <button class="btn-link" onclick="gotoConsultation()">Подобрать юриста</button>
         </article>
         <article class="card">
           <div class="news-meta">27.08.2025 • Литва</div>
-          <div class="news-title">Инвестиционные скамы: обещание дохода 3–5% в неделю</div>
-          <p>Распространены фальшивые платформы с «поддержкой» в мессенджерах. Признак скама — навязчивые звонки и просьбы установить ПО для удалённого доступа.</p>
+          <div class="news-title">Инвестиционные скамы</div>
+          <p>Осторожно с удалённым доступом и навязчивыми звонками.</p>
           <button class="btn-link" onclick="gotoConsultation()">Проверить площадку</button>
-        </article>
-        <article class="card">
-          <div class="news-meta">25.08.2025 • Казахстан</div>
-          <div class="news-title">Крипто‑розыгрыши в соцсетях и фейковые airdrop</div>
-          <p>Сбор seed‑фраз и логинов через формы «верификации кошелька». Никому и никогда не передавайте recovery‑фразы.</p>
-          <button class="btn-link" onclick="gotoConsultation()">Консультация по крипто‑кейсу</button>
-        </article>
-        <article class="card">
-          <div class="news-meta">22.08.2025 • Криптовалюта</div>
-          <div class="news-title">Биржи усиливают KYC для вывода средств</div>
-          <p>Дополнительные проверки адресов и источника средств позволяют быстрее замораживать мошеннические транзакции по запросу юристов.</p>
-          <button class="btn-link" onclick="gotoConsultation()">Разобрать ситуацию</button>
-        </article>
-        <article class="card">
-          <div class="news-meta">20.08.2025 • Литва</div>
-          <div class="news-title">Фишинговые письма от имени госорганов и банков</div>
-          <p>Письма копируют стиль VMI/банков и ведут на поддельные страницы входа. Проверяйте домены и сертификаты, не переходите по сокращённым ссылкам.</p>
-          <button class="btn-link" onclick="gotoConsultation()">Проверить письмо</button>
-        </article>
-        <article class="card">
-          <div class="news-meta">18.08.2025 • Казахстан</div>
-          <div class="news-title">QR‑платежи: поддельные чеки и реквизиты получателя</div>
-          <p>Сканирование «левого» QR может вести на счёт мошенника. Сверяйте данные получателя перед подтверждением перевода.</p>
-          <button class="btn-link" onclick="gotoConsultation()">Помощь с возвратом</button>
         </article>
       </div>
     </div>
   </section>
 
-  <!-- Партнёры -->
-  <section id="partners">
+  <!-- Реестр скам-компаний (вымышленные названия) -->
+  <section id="blacklist">
     <div class="container">
-      <h2 class="section-title"><span class="bar"></span> Юридические партнёры</h2>
-      <p class="subtitle">Свободные юристы есть только в Interlex и BS. Остальные компании — временно без свободных специалистов.</p>
-      <div class="cards">
-        <article class="card">
-          <div class="inline" style="justify-content:space-between;width:100%">
-            <h3>ООО Interlex (Латвия)</h3>
-            <span class="badge available">Свободные юристы</span>
-          </div>
-          <ul>
-            <li>Анна Петрова</li>
-            <li>Елена Кравцева</li>
-            <li>Мария Озолиня</li>
-          </ul>
-          <button class="btn btn-primary" onclick="gotoConsultation()">Записаться</button>
-        </article>
-        <article class="card">
-          <div class="inline" style="justify-content:space-between;width:100%">
-            <h3>ООО BS (Казахстан)</h3>
-            <span class="badge available">Свободные юристы</span>
-          </div>
-          <ul>
-            <li>Айгуль Исаева</li>
-            <li>Ольга Гудеева</li>
-            <li>Азамат Саяжанов</li>
-          </ul>
-          <button class="btn btn-primary" onclick="gotoConsultation()">Записаться</button>
-        </article>
-        <article class="card">
-          <div class="inline" style="justify-content:space-between;width:100%">
-            <h3>ООО LexGuard (Польша)</h3>
-            <span class="badge busy">Нет свободных</span>
-          </div>
-          <p class="subtitle">Оставьте заявку — поставим в лист ожидания.</p>
-          <button class="btn btn-ghost" onclick="gotoConsultation()">Оставить заявку</button>
-        </article>
-        <article class="card">
-          <div class="inline" style="justify-content:space-between;width:100%">
-            <h3>JusPrima (Литва)</h3>
-            <span class="badge busy">Нет свободных</span>
-          </div>
-          <p class="subtitle">Работаем по листу ожидания.</p>
-        </article>
-        <article class="card">
-          <div class="inline" style="justify-content:space-between;width:100%">
-            <h3>BalticShield (Литва)</h3>
-            <span class="badge busy">Нет свободных</span>
-          </div>
-          <p class="subtitle">Запишитесь — уведомим при появлении мест.</p>
-        </article>
-        <article class="card">
-          <div class="inline" style="justify-content:space-between;width:100%">
-            <h3>KazLex (Казахстан)</h3>
-            <span class="badge busy">Нет свободных</span>
-          </div>
-          <p class="subtitle">Очередь на консультации открыта.</p>
-        </article>
-        <article class="card">
-          <div class="inline" style="justify-content:space-between;width:100%">
-            <h3>SteppeLegal (Казахстан)</h3>
-            <span class="badge busy">Нет свободных</span>
-          </div>
-          <p class="subtitle">Оставьте контакты — вернёмся при освобождении слотов.</p>
-        </article>
-        <article class="card">
-          <div class="inline" style="justify-content:space-between;width:100%">
-            <h3>NordLex (Латвия)</h3>
-            <span class="badge busy">Нет свободных</span>
-          </div>
-        </article>
-        <article class="card">
-          <div class="inline" style="justify-content:space-between;width:100%">
-            <h3>Vistula Law (Польша)</h3>
-            <span class="badge busy">Нет свободных</span>
-          </div>
-        </article>
-        <article class="card">
-          <div class="inline" style="justify-content:space-between;width:100%">
-            <h3>Central Asia Legal (Казахстан)</h3>
-            <span class="badge busy">Нет свободных</span>
-          </div>
-        </article>
+      <h2 class="section-title"><span class="bar"></span> Реестр отмеченных мошенничеством</h2>
+      <p class="subtitle">Примеры интерфейса с вымышленными названиями компаний. Используйте форму ниже, чтобы проверить ваш кейс.</p>
+
+      <div class="card wide" style="margin-bottom:16px">
+        <h3 style="margin-top:0">Юридические компании</h3>
+        <table>
+          <thead>
+            <tr><th>Название</th><th>Страна</th><th>Признаки</th><th>Статус</th><th>Дата</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr><td>LexNova Consulting</td><td>Латвия</td><td>Предоплата и исчезновение, нет офиса</td><td><span class="pill bad">подтверждён фрод</span></td><td>08.2025</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Проверить кейс</button></td></tr>
+            <tr><td>Baltic Juris Shield</td><td>Литва</td><td>Договор без реквизитов, звонки с VoIP</td><td><span class="pill warn">высокий риск</span></td><td>07.2025</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Проверить</button></td></tr>
+            <tr><td>KazLegal Prime</td><td>Казахстан</td><td>Гарантированный возврат за 48 часов</td><td><span class="pill bad">подтверждён фрод</span></td><td>06.2025</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Разобрать</button></td></tr>
+            <tr><td>Vistula Trust Law</td><td>Польша</td><td>Отсутствует лицензия, фальшивые отзывы</td><td><span class="pill warn">подозрение</span></td><td>05.2025</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Проверить</button></td></tr>
+            <tr><td>NordLex Capital Recovery</td><td>Латвия</td><td>Требование копии карты и PIN</td><td><span class="pill bad">подтверждён фрод</span></td><td>05.2025</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Консультация</button></td></tr>
+          </tbody>
+        </table>
       </div>
+
+      <div class="card wide">
+        <h3 style="margin-top:0">Брокерские/инвест-площадки</h3>
+        <table>
+          <thead>
+            <tr><th>Название</th><th>Страна</th><th>Признаки</th><th>Статус</th><th>Дата</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr><td>KaspiProfit</td><td>Казахстан</td><td>Фейковые доходы</td><td><span class="pill bad">подтверждён фрод</span></td><td>08.2025</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Пожаловаться</button></td></tr>
+            <tr><td>BluePeak Markets</td><td>Великобритания</td><td>Вывод только после «налога»</td><td><span class="pill warn">высокий риск</span></td><td>08.2025</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Проверить</button></td></tr>
+            <tr><td>Aurora Capital Trade</td><td>Эстония</td><td>Доход 5% в неделю, скрытые комиссии</td><td><span class="pill bad">подтверждён фрод</span></td><td>07.2024</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Разобрать</button></td></tr>
+            <tr><td>NordWave Invest</td><td>Латвия</td><td>Фейковая поддержка в мессенджере</td><td><span class="pill warn">подозрение</span></td><td>06.2025</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Проверить</button></td></tr>
+            <tr><td>SteppeTrade Global</td><td>Казахстан</td><td>Просит seed-фразу от кошелька</td><td><span class="pill bad">подтверждён фрод</span></td><td>06.2024</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Пожаловаться</button></td></tr>
+            <tr><td>Zenith Crypto Brokers</td><td>ОАЭ</td><td>Скрытая юр.информация, домен-клон</td><td><span class="pill warn">высокий риск</span></td><td>05.2024</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Проверить</button></td></tr>
+            <tr><td>Atlas Prime Markets</td><td>Польша</td><td>Агрессивные звонки, «безопасный счёт»</td><td><span class="pill bad">подтверждён фрод</span></td><td>05.2024</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Разобрать</button></td></tr>
+            <tr><td>Quantum Trade Hub</td><td>Литва</td><td>Демо-доходы подменяют реальные</td><td><span class="pill warn">подозрение</span></td><td>04.2024</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Проверить</button></td></tr>
+            <tr><td>KazAtomProm</td><td>Казахстан</td><td>Инвистицонное мошенничество</td><td><span class="pill bad">подтверждён фрод</span></td><td>04.2023</td><td><button class="btn btn-sm btn-ghost" onclick="gotoConsultation()">Пожаловаться</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      
+      </p>
     </div>
   </section>
 </main>
+
 <footer>
   <div class="container">
     © <span id="y"></span> Валютный контроль — информационный сервис. Не является публичной офертой.
   </div>
 </footer>
 
+<!-- Личный кабинет -->
 <section id="cabinet" class="hidden">
   <div class="container">
     <h2 class="section-title"><span class="bar"></span> Личный кабинет</h2>
     <div id="userClaimsSection">
       <div id="claimFormSection" class="cards">
-        <form id="claimForm" class="card wide">
+        <form id="claimForm" class="card wide" onsubmit="return false;">
           <h3>Подача заявления о мошенничестве</h3>
           <div class="cards" style="grid-template-columns:repeat(12,1fr);gap:12px">
-            <label style="grid-column:span 6">ФИО<input id="fio" class="input-group-input" required></label>
-            <label style="grid-column:span 6">Телефон<input id="phone" class="input-group-input" required></label>
-            <label style="grid-column:span 6">Email<input id="email" class="input-group-input" type="email" required></label>
-            <label style="grid-column:span 3">Дата<input id="incident_date" class="input-group-input" type="date" required></label>
-            <label style="grid-column:span 3">Сумма (USD)<input id="amount" class="input-group-input" type="number" min="0" required></label>
-            <label style="grid-column:span 4">Метод
-              <select id="method" class="input-group-input" required>
+            <label class="field" style="grid-column:span 6"><span class="label">ФИО</span><input id="fio" class="control" required></label>
+            <label class="field" style="grid-column:span 6"><span class="label">Телефон</span><input id="phone" class="control" required></label>
+            <label class="field" style="grid-column:span 6"><span class="label">Email</span><input id="email" class="control" type="email" required></label>
+            <label class="field" style="grid-column:span 3"><span class="label">Дата</span><input id="incident_date" class="control" type="date" required></label>
+            <label class="field" style="grid-column:span 3"><span class="label">Сумма (USD)</span><input id="amount" class="control" type="number" min="0" required></label>
+            <label class="field" style="grid-column:span 4"><span class="label">Метод</span>
+              <select id="method" class="control" required>
                 <option value="">Выберите…</option>
                 <option>Банковский перевод</option>
                 <option>Карта</option>
                 <option>Криптовалюта</option>
               </select>
             </label>
-            <label style="grid-column:span 4">Компания<input id="company" class="input-group-input"></label>
-            <label style="grid-column:span 4">Счёт/банк<input id="account_bank" class="input-group-input" required></label>
-            <label style="grid-column:span 12">Файлы<input id="files" class="input-group-input" type="file" multiple></label>
+            <label class="field" style="grid-column:span 4"><span class="label">Компания</span><input id="company" class="control"></label>
+            <label class="field" style="grid-column:span 4"><span class="label">Счёт/банк</span><input id="account_bank" class="control" required></label>
+            <label class="field" style="grid-column:span 12"><span class="label">Файлы</span><input id="files" class="control" type="file" multiple></label>
           </div>
-          <div class="inline" style="margin-top:10px">
+          <div class="inline" style="margin-top:10px;display:flex;gap:10px">
             <button type="button" id="buildClaim" class="btn btn-primary">Сформировать заявление</button>
             <button type="button" id="sendClaim" class="btn btn-ghost hidden">Отправить</button>
           </div>
@@ -312,6 +289,7 @@
   </div>
 </section>
 
+<!-- Панель администратора -->
 <section id="adminPanel" class="hidden">
   <div class="container">
     <h2 class="section-title"><span class="bar"></span> Панель администратора</h2>
@@ -330,15 +308,9 @@
   <div class="modal-content">
     <span class="close-btn" id="authClose">&times;</span>
     <h2 id="authTitle"></h2>
-    <div class="input-group">
-      <label for="authEmail">Email / логин</label>
-      <input type="email" id="authEmail" required>
-    </div>
-    <div class="input-group" id="passwordGroup">
-      <label for="authPassword">Пароль</label>
-      <input type="password" id="authPassword" required>
-    </div>
-    <button class="btn form-btn" id="authSubmit"></button>
+    <label class="field"><span class="label">Email</span><input type="email" id="authEmail" class="control" required></label>
+    <label class="field"><span class="label">Пароль</span><input type="password" id="authPassword" class="control" required></label>
+    <button class="btn btn-primary" id="authSubmit"></button>
     <p id="authMessage" style="color:#ff8b8b; margin-top:10px;"></p>
   </div>
 </div>
@@ -353,96 +325,92 @@
 </div>
 
 <script>
+  // ========= SUPABASE CONFIG =========
   const SUPABASE_URL = 'https://prvnidskpxzaapprozgh.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydm5pZHNrcHh6YWFwcHJvemdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzODcxNjcsImV4cCI6MjA3MTk2MzE2N30.-Kqto54aIyM9524NTp001zYzOOI_9KZs91N-9Zam3Yg';
 
-  const ADMIN_ALIAS = 'admin555';
-  const ADMIN_EMAIL = 'admin@valcontrol.info';
-
-  let sb;
-  
-  // Инициализация Supabase только после загрузки скрипта
-  window.addEventListener('load', () => {
-    if (window.supabase) {
-      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      console.log('App init ok');
-      hydrate();
-    } else {
-      console.error('Supabase UMD не загрузился.');
-    }
-  });
-
-  const btnLogin = document.getElementById('btnLogin');
-  const btnRegister = document.getElementById('btnRegister');
-  const btnCabinet = document.getElementById('btnCabinet');
-  const btnAdminPanel = document.getElementById('btnAdminPanel');
-  const btnLogout = document.getElementById('btnLogout');
-  const roleTag = document.getElementById('roleTag');
-  const mainContent = document.getElementById('mainContent');
-  const cabinetSection = document.getElementById('cabinet');
-  const adminPanel = document.getElementById('adminPanel');
-  const claimForm = document.getElementById('claimForm');
-  const buildClaimBtn = document.getElementById('buildClaim');
-  const sendClaimBtn = document.getElementById('sendClaim');
-  const claimPreview = document.getElementById('claimPreview');
-  const myClaims = document.getElementById('myClaims');
-  const adminClaims = document.getElementById('adminClaims');
-  const reloadAdmin = document.getElementById('reloadAdmin');
-  const authModal = document.getElementById('authModal');
-  const authClose = document.getElementById('authClose');
-  const authTitle = document.getElementById('authTitle');
-  const authEmail = document.getElementById('authEmail');
-  const authPassword = document.getElementById('authPassword');
-  const authSubmit = document.getElementById('authSubmit');
-  const authMessage = document.getElementById('authMessage');
-  const passwordGroup = document.getElementById('passwordGroup');
-  const adminModal = document.getElementById('adminModal');
-  const adminModalClose = document.getElementById('adminModalClose');
-  const adminModalTitle = document.getElementById('adminModalTitle');
-  const adminModalContent = document.getElementById('adminModalContent');
-
-  let isLogin = true;
+  let sb; 
   const state = { user: null, profile: null };
 
   const fmtUSD = n => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(Number(n||0));
-  const fmtDate = d => new Date(d).toLocaleDateString('ru-RU');
+  const fmtDate = d => { if (!d) return ''; if (/^\d{4}-\d{2}-\d{2}$/.test(d)) { const [y,m,dd] = d.split('-'); return `${dd}.${m}.${y}`; } try { return new Date(d).toLocaleDateString('ru-RU'); } catch(e){ return d; } };
+  const escapeHtml = s => (s||'').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+  const sanitizeFilename = name => name.replace(/[^a-zA-Z0-9_.-]/g,'_').slice(0,120);
+  const setStatusPill = status => `<span class="status ${status}">${status.replace('_',' ')}</span>`;
+  const show = el => { if (!el) return; if (el.classList?.contains('modal')) { el.style.display='flex'; } else { el.classList?.remove('hidden'); }};
+  const hide = el => { if (!el) return; if (el.classList?.contains('modal')) { el.style.display='none'; } else { el.classList?.add('hidden'); }};
 
-  function show(el){
-    if (!el) return;
-    if (el.classList?.contains('modal')) { el.style.display = 'flex'; return; }
-    el.classList?.remove('hidden');
-  }
-  function hide(el){
-    if (!el) return;
-    if (el.classList?.contains('modal')) { el.style.display = 'none'; return; }
-    el.classList?.add('hidden');
-  }
+  let btnLogin, btnRegister, btnCabinet, btnAdminPanel, btnLogout, roleTag, mainContent, cabinetSection, adminPanel;
+  let buildClaimBtn, sendClaimBtn, claimPreview, claimForm, myClaims, adminClaims, reloadAdmin;
+  let authModal, authClose, authTitle, authEmail, authPassword, authSubmit, authMessage;
+  let adminModal, adminModalClose, adminModalTitle, adminModalContent;
 
-  function setStatusPill(status){
-    return `<span class="status ${status}">${status.replace('_',' ')}</span>`;
-  }
+  document.addEventListener('DOMContentLoaded', async () => {
+    btnLogin = document.getElementById('btnLogin');
+    btnRegister = document.getElementById('btnRegister');
+    btnCabinet = document.getElementById('btnCabinet');
+    btnAdminPanel = document.getElementById('btnAdminPanel');
+    btnLogout = document.getElementById('btnLogout');
+    roleTag = document.getElementById('roleTag');
+    mainContent = document.getElementById('mainContent');
+    cabinetSection = document.getElementById('cabinet');
+    adminPanel = document.getElementById('adminPanel');
+    claimForm = document.getElementById('claimForm');
+    buildClaimBtn = document.getElementById('buildClaim');
+    sendClaimBtn = document.getElementById('sendClaim');
+    claimPreview = document.getElementById('claimPreview');
+    myClaims = document.getElementById('myClaims');
+    adminClaims = document.getElementById('adminClaims');
+    reloadAdmin = document.getElementById('reloadAdmin');
+    authModal = document.getElementById('authModal');
+    authClose = document.getElementById('authClose');
+    authTitle = document.getElementById('authTitle');
+    authEmail = document.getElementById('authEmail');
+    authPassword = document.getElementById('authPassword');
+    authSubmit = document.getElementById('authSubmit');
+    authMessage = document.getElementById('authMessage');
+    adminModal = document.getElementById('adminModal');
+    adminModalClose = document.getElementById('adminModalClose');
+    adminModalTitle = document.getElementById('adminModalTitle');
+    adminModalContent = document.getElementById('adminModalContent');
 
-  // Auth modal events
-  btnLogin.addEventListener('click', () => openAuth(true));
-  btnRegister.addEventListener('click', () => openAuth(false));
-  btnCabinet.addEventListener('click', () => {
-    hide(mainContent);
-    hide(adminPanel);
-    show(cabinetSection);
-    renderMyClaims();
+    document.getElementById('y').textContent = new Date().getFullYear();
+
+    if (!window.supabase) { alert('Ошибка инициализации Supabase'); return; }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    wireUI();
+    await hydrate();
+    sb.auth.onAuthStateChange(async (_evt, session) => {
+      state.user = session?.user || null;
+      if (state.user) await loadProfile(); else state.profile = null;
+      updateUI();
+    });
+
+    window.gotoConsultation = gotoConsultation;
   });
-  btnAdminPanel.addEventListener('click', () => {
-    hide(mainContent);
-    hide(cabinetSection);
-    show(adminPanel);
-    renderAdminClaims();
-  });
-  btnLogout.addEventListener('click', async () => { 
-    if (!sb) return alert('Инициализация...'); 
-    await sb.auth.signOut(); 
-    location.reload(); 
-  });
 
+  function wireUI(){
+    btnLogin?.addEventListener('click', () => openAuth(true));
+    btnRegister?.addEventListener('click', () => openAuth(false));
+    btnCabinet?.addEventListener('click', () => { hide(mainContent); hide(adminPanel); show(cabinetSection); renderMyClaims(); });
+    btnAdminPanel?.addEventListener('click', () => { hide(mainContent); hide(cabinetSection); show(adminPanel); renderAdminClaims(); });
+    btnLogout?.addEventListener('click', async () => { await sb?.auth.signOut(); });
+    authClose?.addEventListener('click', () => hide(authModal));
+    window.addEventListener('click', (e) => { if (e.target === authModal) hide(authModal); });
+
+    [authEmail, authPassword].forEach(inp => inp?.addEventListener('keyup', e => { if (e.key === 'Enter') authSubmit?.click(); }));
+    authSubmit?.addEventListener('click', onAuthSubmit);
+
+    buildClaimBtn?.addEventListener('click', onBuildClaim);
+    sendClaimBtn?.addEventListener('click', onSendClaim);
+
+    reloadAdmin?.addEventListener('click', renderAdminClaims);
+    adminModalClose?.addEventListener('click', () => hide(adminModal));
+    window.addEventListener('click', (e) => { if (e.target === adminModal) hide(adminModal); });
+  }
+
+  let isLogin = true;
   function openAuth(login){
     isLogin = !!login;
     authTitle.textContent = login ? 'Вход' : 'Регистрация';
@@ -452,31 +420,20 @@
     authPassword.value = '';
     show(authModal);
   }
-
-  authClose.onclick = () => hide(authModal);
-  window.addEventListener('click', (e) => { if (e.target === authModal) hide(authModal); });
-  [authEmail, authPassword].forEach(inp => inp.addEventListener('keyup', e => { if (e.key === 'Enter') authSubmit.click(); }));
-
-  authSubmit.addEventListener('click', async () => { if (!sb) return alert('Инициализация...');
-    const rawLogin = authEmail.value.trim();
-    let email = rawLogin;
-    const isAdminAlias = rawLogin.toLowerCase() === ADMIN_ALIAS;
-    if (isAdminAlias) email = ADMIN_EMAIL;
+  async function onAuthSubmit(){
+    const email = authEmail.value.trim();
     const password = authPassword.value.trim();
     authMessage.textContent = '';
     try {
+      if (!email || !password) throw new Error('Укажите email и пароль');
       if (isLogin) {
-        if (isAdminAlias && password !== ADMIN_ALIAS) throw new Error('Неверный пароль');
         const { error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
         hide(authModal);
         await hydrate();
       } else {
-        if (isAdminAlias) { throw new Error('Для регистрации укажите реальный email, алиас недопустим'); }
         const redirectTo = `${location.origin}${location.pathname}`;
-        const { data, error } = await sb.auth.signUp({
-          email, password, options: { emailRedirectTo: redirectTo }
-        });
+        const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo }});
         if (error) throw error;
         if (data.user) {
           authMessage.style.color = '#7CFC98';
@@ -488,50 +445,75 @@
       authMessage.style.color = '#ff8b8b';
       authMessage.textContent = err.message || 'Ошибка';
     }
-  });
-
-  async function loadProfile(){
-    if (!sb || !state.user) { state.profile = null; return; }
-    const { data, error } = await sb.from('profiles').select('id, role, email, full_name').eq('id', state.user.id).maybeSingle();
-    if (!error) state.profile = data; else state.profile = null;
-  }
-
-  function updateUI(){
-    if (state.user){
-      hide(btnLogin); hide(btnRegister); show(btnLogout); hide(mainContent);
-      if (state.profile?.role === 'admin'){ show(btnAdminPanel); hide(btnCabinet); show(adminPanel); hide(cabinetSection); show(roleTag); } else { show(btnCabinet); hide(btnAdminPanel); show(cabinetSection); hide(adminPanel); hide(roleTag); }
-      renderMyClaims();
-      if (state.profile?.role === 'admin') renderAdminClaims();
-    } else {
-      show(btnLogin); show(btnRegister); hide(btnCabinet); hide(btnAdminPanel); hide(btnLogout); show(mainContent); hide(cabinetSection); hide(adminPanel); hide(roleTag);
-      myClaims.innerHTML = '';
-      adminClaims.innerHTML = '';
-    }
   }
 
   async function hydrate(){
-    if (!sb) return;
     const { data: { session } } = await sb.auth.getSession();
     state.user = session?.user || null;
     if (state.user) await loadProfile();
     updateUI();
   }
-  
-  // Переносим слушатель авторизации, чтобы он вызывался только после инициализации sb
-  window.addEventListener('load', () => {
-    if (window.supabase) {
-      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      sb.auth.onAuthStateChange(async (_evt, session) => {
-        state.user = session?.user || null;
-        if (state.user) await loadProfile(); else state.profile = null;
-        updateUI();
-      });
-      hydrate();
+  async function loadProfile(){
+    if (!state.user) { state.profile = null; return; }
+    const { data, error } = await sb.from('profiles').select('id, role, email, full_name').eq('id', state.user.id).maybeSingle();
+    state.profile = !error ? data : null;
+  }
+  function updateUI(){
+    if (state.user){
+      hide(btnLogin); hide(btnRegister); show(btnLogout); hide(mainContent);
+      if (state.profile?.role === 'admin'){ show(btnAdminPanel); hide(btnCabinet); show(adminPanel); hide(cabinetSection); show(roleTag); renderAdminClaims(); } 
+      else { show(btnCabinet); hide(btnAdminPanel); show(cabinetSection); hide(adminPanel); hide(roleTag); renderMyClaims(); }
+    } else {
+      show(btnLogin); show(btnRegister); hide(btnCabinet); hide(btnAdminPanel); hide(btnLogout); show(mainContent); hide(cabinetSection); hide(adminPanel); hide(roleTag);
+      myClaims.innerHTML = ''; adminClaims.innerHTML = '';
     }
-  });
+  }
+  function gotoConsultation(){
+    if (!state.user){ openAuth(true); return; }
+    hide(mainContent); hide(adminPanel); show(cabinetSection);
+    document.getElementById('fio')?.focus();
+    cabinetSection?.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
 
-  // Claims: preview + send
-  buildClaimBtn.addEventListener('click', () => {
+  function renderHistory(history){
+    if (!history?.length) return '<p>Нет обновлений.</p>';
+    const sorted = [...history].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    return `
+      <ul style="padding:0;margin:0;list-style:none">
+        ${sorted.map(item => `
+          <li style="margin-bottom:15px;padding-bottom:15px;border-bottom:1px dashed #222;font-size:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;color:var(--muted);">
+              <span>Комментарий администратора</span>
+              <small>${new Date(item.created_at).toLocaleString('ru-RU')}</small>
+            </div>
+            <p style="margin:8px 0;line-height:1.6;">${escapeHtml(item.comment||'')}</p>
+            ${item.files?.length ? `<div><b>Прикреплённые файлы:</b><br>${item.files.map(f => `<a href="${f.url}" target="_blank" rel="noopener noreferrer" style="font-size:12px;display:block;margin-top:4px;">${escapeHtml(f.name)}</a>`).join('')}</div>` : ''}
+          </li>
+        `).join('')}
+      </ul>`;
+  }
+
+  async function renderMyClaims(){
+    if (!state.user){ myClaims.innerHTML = ''; return; }
+    const { data, error } = await sb.from('claims').select('id, created_at, status, history, amount, method, phone, email').eq('user_id', state.user.id).order('created_at',{ascending:false});
+    if (error){ myClaims.innerHTML = `<p>Ошибка загрузки: ${escapeHtml(error.message || 'Неизвестная ошибка.')}</p>`; return; }
+    if (!data?.length){ myClaims.innerHTML = '<p>Вы ещё не подавали заявления.</p>'; return; }
+    myClaims.innerHTML = data.map(r => `
+      <div class="card wide" style="margin-bottom:20px;padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h4 style="margin:0;">Дело #${r.id}: ${setStatusPill(r.status)}</h4>
+          <span style="font-size:12px;color:var(--muted);">${new Date(r.created_at).toLocaleString('ru-RU')}</span>
+        </div>
+        <p><b>Контакты:</b> ${escapeHtml(r.email)}, ${escapeHtml(r.phone)}</p>
+        <p><b>Сумма:</b> ${fmtUSD(r.amount)} (${escapeHtml(r.method)})</p>
+        <hr style="border-color:rgba(212,175,55,.16);margin:15px 0;" />
+        <h4 style="margin:0 0 10px;">История взаимодействия</h4>
+        ${renderHistory(r.history)}
+      </div>
+    `).join('');
+  }
+
+  function onBuildClaim(){
     const fio = document.getElementById('fio').value.trim();
     const phone = document.getElementById('phone').value.trim();
     const email = document.getElementById('email').value.trim();
@@ -558,12 +540,12 @@
     `;
     show(claimPreview);
     show(sendClaimBtn);
-  });
+  }
 
-  sendClaimBtn.addEventListener('click', async () => {
+  async function onSendClaim(){
     sendClaimBtn.disabled = true; sendClaimBtn.textContent = 'Отправляем…';
     try{
-      if (!sb || !state.user) throw new Error('Необходимо войти');
+      if (!state.user) throw new Error('Необходимо войти');
       const payload = {
         user_id: state.user.id,
         fio: document.getElementById('fio').value.trim(),
@@ -583,79 +565,23 @@
         for (const f of files){
           const path = `${state.user.id}/${claim.id}/${Date.now()}_${sanitizeFilename(f.name)}`;
           const { error: upErr } = await sb.storage.from('claim-files').upload(path, f, { upsert:false });
-          if (upErr) console.warn('Upload error', upErr);
-          else await sb.from('claim_files').insert({ claim_id: claim.id, path });
+          if (upErr) console.warn('Upload error', upErr); else await sb.from('claim_files').insert({ claim_id: claim.id, path });
         }
       }
-
-      claimForm.reset();
-      hide(sendClaimBtn); hide(claimPreview);
-      renderMyClaims();
+      claimForm.reset(); hide(sendClaimBtn); hide(claimPreview);
+      await renderMyClaims();
       alert('Заявление отправлено!');
     } catch(err){
       alert(err.message || 'Ошибка');
     } finally {
       sendClaimBtn.disabled = false; sendClaimBtn.textContent = 'Отправить';
     }
-  });
-
-  // User Claims UI
-  async function renderMyClaims(){
-    if (!sb || !state.user){ myClaims.innerHTML = ''; return; }
-    const { data, error } = await sb.from('claims').select('id, created_at, status, history, amount, method, phone, email').eq('user_id', state.user.id).order('created_at',{ascending:false});
-    
-    if (error){ 
-      console.error('Ошибка Supabase:', error);
-      myClaims.innerHTML = `<p>Ошибка загрузки: ${error.message || 'Неизвестная ошибка.'}<br>Возможно, проблема с правами доступа к таблице в базе данных (RLS).</p>`; 
-      return; 
-    }
-    
-    if (!data.length){ myClaims.innerHTML = '<p>Вы ещё не подавали заявления.</p>'; return; }
-    myClaims.innerHTML = data.map(r => `
-      <div class="card wide" style="margin-bottom:20px;padding:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <h4 style="margin:0;">Дело #${r.id}: ${setStatusPill(r.status)}</h4>
-          <span style="font-size:12px;color:var(--muted);">${new Date(r.created_at).toLocaleString('ru-RU')}</span>
-        </div>
-        <p><b>Контакты:</b> ${escapeHtml(r.email)}, ${escapeHtml(r.phone)}</p>
-        <p><b>Сумма:</b> ${fmtUSD(r.amount)} (${escapeHtml(r.method)})</p>
-        <hr style="border-color:rgba(212,175,55,.16);margin:15px 0;" />
-        <h4 style="margin:0 0 10px;">История взаимодействия</h4>
-        ${renderHistory(r.history)}
-      </div>
-    `).join('');
   }
 
-  function renderHistory(history){
-    if (!history?.length) return '<p>Нет обновлений.</p>';
-    const sorted = history.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-    return `
-      <ul style="padding:0;margin:0;list-style:none">
-        ${sorted.map(item => `
-          <li style="margin-bottom:15px;padding-bottom:15px;border-bottom:1px dashed #222;font-size:14px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;color:var(--muted);">
-              <span>Комментарий администратора</span>
-              <small>${new Date(item.created_at).toLocaleString('ru-RU')}</small>
-            </div>
-            <p style="margin:8px 0;line-height:1.6;">${escapeHtml(item.comment)}</p>
-            ${item.files?.length ? `<div><b>Прикреплённые файлы:</b><br>${item.files.map(f => `<a href="${f.url}" target="_blank" style="font-size:12px;display:block;margin-top:4px;">${f.name}</a>`).join('')}</div>` : ''}
-          </li>
-        `).join('')}
-      </ul>`;
-  }
-
-  // Admin UI
   async function renderAdminClaims(){
-    if (!sb) { adminClaims.innerHTML = '<p>Ошибка инициализации.</p>'; return; }
     const { data, error } = await sb.from('claims').select('id, created_at, fio, email, amount, status').order('created_at',{ascending:false});
-    
-    if (error){ 
-      console.error('Ошибка Supabase:', error);
-      adminClaims.innerHTML = `<p>Ошибка загрузки: ${error.message || 'Неизвестная ошибка.'}</p>`; 
-      return; 
-    }
-    
-    if (!data.length){ adminClaims.innerHTML = '<p>Пока нет заявлений.</p>'; return; }
+    if (error){ adminClaims.innerHTML = `<p>Ошибка загрузки: ${escapeHtml(error.message || 'Неизвестная ошибка.')}</p>`; return; }
+    if (!data?.length){ adminClaims.innerHTML = '<p>Пока нет заявлений.</p>'; return; }
     adminClaims.innerHTML = `
       <table>
         <thead><tr><th>ID</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr></thead>
@@ -669,37 +595,27 @@
           </tr>`).join('')}
         </tbody>
       </table>`;
-
     adminClaims.querySelectorAll('.view-claim').forEach(btn => {
       btn.addEventListener('click', async () => {
         const claimId = btn.dataset.id;
         try {
-          const { data: claim, error } = await sb.from('claims')
-            .select('*, claim_files(path)')
-            .eq('id', claimId)
-            .single();
+          const { data: claim, error } = await sb.from('claims').select('*, claim_files(path)').eq('id', claimId).single();
           if (error) throw error;
-          showAdminModal(claim);
-        } catch (err) {
-          console.error('Ошибка загрузки заявки:', err);
-          alert('Ошибка при загрузке данных заявки: ' + (err.message || 'Неизвестная ошибка'));
-        }
+          await showAdminModal(claim);
+        } catch (err) { alert('Ошибка: ' + (err.message || 'Неизвестная ошибка')); }
       });
     });
   }
 
   async function showAdminModal(claim){
     adminModalTitle.textContent = `Заявление #${claim.id}`;
-    
     const statusOptions = ['submitted', 'in_review', 'in_process', 'approved', 'rejected'];
     const statusSelect = statusOptions.map(opt => `<option value="${opt}" ${opt === claim.status ? 'selected' : ''}>${opt.replace('_',' ')}</option>`).join('');
-
     const fileLinks = (claim.claim_files || []).map(f => {
       const { data } = sb.storage.from('claim-files').getPublicUrl(f.path);
-      const fileName = f.path.split('/').pop().substring(14);
-      return `<li><a href="${data.publicUrl}" target="_blank">${fileName}</a></li>`;
+      const name = f.path.split('/').pop().replace(/^\d+_/, '');
+      return `<li><a href="${data.publicUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(name)}</a></li>`;
     }).join('');
-
     const historyHTML = `
       <h4>История дела</h4>
       ${(claim.history && claim.history.length > 0) ? `
@@ -707,13 +623,12 @@
         ${(claim.history).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).map(item => `
           <li style="margin-bottom:15px;padding-bottom:15px;border-bottom:1px dashed #222;font-size:14px;">
             <small style="color:var(--muted);font-size:11px">${new Date(item.created_at).toLocaleString('ru-RU')}</small>
-            <p style="margin:4px 0">${escapeHtml(item.comment)}</p>
-            ${item.files?.length ? `<div><b>Прикреплённые файлы:</b><br>${item.files.map(f => `<a href="${f.url}" target="_blank" style="font-size:12px;display:block">${f.name}</a>`).join('')}</div>` : ''}
+            <p style="margin:4px 0">${escapeHtml(item.comment || '')}</p>
+            ${item.files?.length ? `<div><b>Прикреплённые файлы:</b><br>${item.files.map(f => `<a href="${f.url}" target="_blank" rel="noopener noreferrer" style="font-size:12px;display:block">${escapeHtml(f.name)}</a>`).join('')}</div>` : ''}
           </li>
         `).join('')}
       </ul>` : '<p>Нет обновлений.</p>'}
     `;
-
     adminModalContent.innerHTML = `
       <div class="cards" style="grid-template-columns:repeat(12,1fr);gap:12px;margin-bottom:20px;">
         <div style="grid-column:span 6"><b>Клиент:</b> ${escapeHtml(claim.fio)}</div>
@@ -725,106 +640,48 @@
         <div style="grid-column:span 12"><b>Счёт/банк:</b> ${escapeHtml(claim.account_bank)}</div>
         <div style="grid-column:span 12">
           <b>Прикреплённые файлы клиента:</b>
-          ${fileLinks.length > 0 ? `<ul>${fileLinks}</ul>` : '<p>Нет файлов.</p>'}
+          ${fileLinks.length ? `<ul>${fileLinks}</ul>` : '<p>Нет файлов.</p>'}
         </div>
       </div>
       <div style="margin-bottom:20px;">
         <h4 style="margin:0 0 10px;">Обновить статус и добавить комментарий</h4>
         <form id="adminUpdateForm">
-          <div class="input-group">
-            <label for="adminStatusSelect">Статус</label>
-            <select id="adminStatusSelect">${statusSelect}</select>
-          </div>
-          <div class="input-group">
-            <label for="adminComment">Комментарий</label>
-            <textarea id="adminComment" rows="4"></textarea>
-          </div>
-          <div class="input-group">
-            <label for="adminFiles">Прикрепить файлы</label>
-            <input type="file" id="adminFiles" multiple>
-          </div>
+          <label class="field"><span class="label">Статус</span><select id="adminStatusSelect" class="control">${statusSelect}</select></label>
+          <label class="field"><span class="label">Комментарий</span><textarea id="adminComment" class="control" rows="4"></textarea></label>
+          <label class="field"><span class="label">Прикрепить файлы</span><input type="file" id="adminFiles" class="control" multiple></label>
           <button type="submit" class="btn btn-primary" id="adminUpdateBtn" style="margin-top:10px;">Сохранить изменения</button>
         </form>
       </div>
       ${historyHTML}
     `;
-
     show(adminModal);
-
     document.getElementById('adminUpdateForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const newStatus = document.getElementById('adminStatusSelect').value;
       const comment = document.getElementById('adminComment').value.trim();
       const files = document.getElementById('adminFiles').files;
       const updateBtn = document.getElementById('adminUpdateBtn');
-
-      if (!comment && files.length === 0 && newStatus === claim.status) {
-        alert('Нет изменений для сохранения');
-        return;
-      }
-      
+      if (!comment && files.length === 0 && newStatus === claim.status) { alert('Нет изменений для сохранения'); return; }
       updateBtn.disabled = true; updateBtn.textContent = 'Сохраняем...';
-
       try {
-        const updates = { status: newStatus };
-        const { data: updatedClaim, error } = await sb.from('claims')
-          .update(updates)
-          .eq('id', claim.id)
-          .select()
-          .single();
-
+        const { data: updated, error } = await sb.from('claims').update({ status: newStatus }).eq('id', claim.id).select().single();
         if (error) throw error;
-
         if (comment || files.length > 0) {
-          const newHistoryItem = {
-            created_at: new Date().toISOString(),
-            comment: comment || '',
-            files: []
-          };
-
+          const newHistoryItem = { created_at: new Date().toISOString(), comment: comment || '', files: [] };
           for (const f of files) {
             const path = `admin-files/${claim.id}/${Date.now()}_${sanitizeFilename(f.name)}`;
             const { error: upErr } = await sb.storage.from('claim-files').upload(path, f, { upsert: false });
-            if (upErr) console.warn('Upload error', upErr);
-            else {
-              const { data: publicUrlData } = sb.storage.from('claim-files').getPublicUrl(path);
-              newHistoryItem.files.push({ name: sanitizeFilename(f.name), url: publicUrlData.publicUrl });
-            }
+            if (!upErr) { const { data: pub } = sb.storage.from('claim-files').getPublicUrl(path); newHistoryItem.files.push({ name: sanitizeFilename(f.name), url: pub.publicUrl }); }
           }
-
-          const currentHistory = updatedClaim.history || [];
-          const { error: historyError } = await sb.from('claims')
-            .update({ history: [...currentHistory, newHistoryItem] })
-            .eq('id', claim.id);
-          if (historyError) throw historyError;
+          const currentHistory = updated.history || [];
+          const { error: hErr } = await sb.from('claims').update({ history: [...currentHistory, newHistoryItem] }).eq('id', claim.id);
+          if (hErr) throw hErr;
         }
-
-        hide(adminModal);
-        renderAdminClaims();
-        alert('Заявление успешно обновлено');
-      } catch(err) {
-        alert('Ошибка при обновлении: ' + err.message);
-      } finally {
-        updateBtn.disabled = false; updateBtn.textContent = 'Сохранить изменения';
-      }
+        hide(adminModal); renderAdminClaims(); alert('Заявление успешно обновлено');
+      } catch(err) { alert('Ошибка: ' + (err.message || 'Неизвестная ошибка')); }
+      finally { updateBtn.disabled = false; updateBtn.textContent = 'Сохранить изменения'; }
     });
   }
-  
-  adminModalClose.onclick = () => hide(adminModal);
-  window.addEventListener('click', (e) => { if (e.target === adminModal) hide(adminModal); });
-
-  reloadAdmin?.addEventListener('click', renderAdminClaims);
-
-  // Security helpers
-  function escapeHtml(s){
-    return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
-  }
-  function sanitizeFilename(name){
-    return name.replace(/[^a-zA-Z0-9_.-]/g,'_').slice(0,120);
-  }
-
-  // Footer year
-  (function(){ try{ document.getElementById('y').textContent = new Date().getFullYear(); }catch(e){} })();
 </script>
 </body>
 </html>
