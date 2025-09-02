@@ -7,7 +7,6 @@
   <meta name="description" content="Валютный контроль, новости о мониторинге мошеннических транзакций и процедура оспаривания платежа Detrac Recovery."/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="preload" as="image" href="assets/img/hero-card.png">
   <script defer src="https://unpkg.com/@supabase/supabase-js@2.46.1/dist/umd/supabase.js"></script>
   <style>
     :root{
@@ -85,6 +84,12 @@
     .pill.bad{background:rgba(255,93,93,.1);color:#ff9b9b;border-color:rgba(255,93,93,.36)}
     .pill.warn{background:rgba(255,193,7,.12);color:#ffd46a;border-color:rgba(255,193,7,.36)}
     .pill.ok{background:rgba(47,210,122,.14);color:#7cf4af;border-color:rgba(47,210,122,.36)}
+    .pill-yellow{ color:#f5c044; border-color:#f5c0443d; background:#f5c0441a; }
+    .pill-blue  { color:#60a5fa; border-color:#60a5fa3d; background:#60a5fa1a; }
+    .pill-purple{ color:#a78bfa; border-color:#a78bfa3d; background:#a78bfa1a; }
+    .pill-orange{ color:#f59e0b; border-color:#f59e0b3d; background:#f59e0b1a; }
+    .pill-green { color:#4ade80; border-color:#4ade803d; background:#4ade801a; }
+    .pill-red   { color:#f87171; border-color:#f871713d; background:#f871711a; }
     /* Gallery */
     .gallery{margin-top:14px;display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
     .gallery .g{grid-column:span 6;background:rgba(255,255,255,.02);border:1px solid rgba(212,175,55,.16);border-radius:18px;overflow:hidden}
@@ -122,12 +127,10 @@
         <h1>Защита клиентов: валютный контроль и Detrac Recovery</h1>
         <p class="lead">Информация, новости и партнёры для возврата средств и борьбы с мошенниками.</p>
         <div class="banner">
-          <img src="assets/img/currency-board.jpg" width="1200" height="320" alt="Currency control dashboard" loading="lazy">
           <h3>Мониторинг транзакций и споры по платежам</h3>
         </div>
       </div>
       <div class="hero-media">
-        <img src="assets/img/hero-card.png" width="900" height="600" alt="Прозрачная карта с графиком" decoding="async">
         <div class="shine"></div>
         <div class="stat-card" style="position:absolute;right:12px;bottom:12px">
           <span class="chip">AML/CFT</span>
@@ -149,11 +152,9 @@
 
       <div class="gallery">
         <div class="g" style="grid-column:span 7;">
-          <img src="assets/img/currency-board.jpg" alt="Графики и карта мира — Currency Control" loading="lazy">
           <div class="cap">Аналитическая панель: глобальные графики и индикаторы.</div>
         </div>
         <div class="g" style="grid-column:span 5;">
-          <img src="assets/img/hero-card.png" alt="Стеклянная карта с кривыми роста" loading="lazy">
           <div class="cap">Визуализация платежной карты и динамики транзакций.</div>
         </div>
       </div>
@@ -236,7 +237,6 @@
         </table>
       </div>
 
-      
       </p>
     </div>
   </section>
@@ -294,13 +294,30 @@
   <div class="container">
     <h2 class="section-title"><span class="bar"></span> Панель администратора</h2>
     <div class="card wide">
-      <div class="inline" style="justify-content:space-between;width:100%">
-        <h3>Все заявления</h3>
-        <button id="reloadAdmin" class="btn btn-ghost">Обновить</button>
-      </div>
-      <div id="adminClaims"></div>
-    </div>
+  <!-- Строка заголовка -->
+  <div class="inline" style="justify-content:space-between;width:100%">
+    <h3>Все заявления</h3>
+    <button id="reloadAdmin" class="btn btn-ghost">Обновить</button>
   </div>
+
+  <!-- Панель фильтров / поиск / экспорт -->
+  <select id="admFilterStatus" class="control" style="width:180px">
+  <option value="">Все статусы</option>
+  <option value="submitted">submitted</option>
+  <option value="in_review">in_review</option>
+  <option value="kyc">kyc</option>
+  <option value="in_process">in_process</option>
+  <option value="approved">approved</option>
+  <option value="rejected">rejected</option>
+</select>
+
+ <input id="admSearch" class="control" placeholder="Поиск (ФИО / email)" style="width:260px">
+        <button id="admExport" class="btn btn-ghost btn-sm">Экспорт CSV</button>
+      </div>
+
+      <div id="adminClaims"></div>
+    </div> <!-- /card -->
+  </div>   <!-- /container -->
 </section>
 
 <!-- Аутентификация -->
@@ -336,7 +353,32 @@
   const fmtDate = d => { if (!d) return ''; if (/^\d{4}-\d{2}-\d{2}$/.test(d)) { const [y,m,dd] = d.split('-'); return `${dd}.${m}.${y}`; } try { return new Date(d).toLocaleDateString('ru-RU'); } catch(e){ return d; } };
   const escapeHtml = s => (s||'').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   const sanitizeFilename = name => name.replace(/[^a-zA-Z0-9_.-]/g,'_').slice(0,120);
-  const setStatusPill = status => `<span class="status ${status}">${status.replace('_',' ')}</span>`;
+  // === Статусы: код -> подпись и цвет плашки ===
+const STATUS_LABEL = {
+  submitted:  'На рассмотрении',
+  in_review:  'В работе',
+  kyc:        'Подтверждение личности',
+  in_process: 'Процесс получения средств',
+  approved:   'Выплата',
+  rejected:   'Возврат в работу' // или "Отклонено" — как решишь
+};
+
+const STATUS_PILL_CLASS = {
+  submitted:  'pill-blue',
+  in_review:  'pill-purple',
+  kyc:        'pill-orange',
+  in_process: 'pill-yellow',
+  approved:   'pill-green',
+  rejected:   'pill-red'
+};
+
+// Рисуем «плашку» статуса
+const setStatusPill = (code) => {
+  const label = STATUS_LABEL[code] ?? String(code).replaceAll('_',' ');
+  const cls   = STATUS_PILL_CLASS[code] ?? 'pill-blue';
+  return `<span class="pill ${cls}">${escapeHtml(label)}</span>`;
+};
+
   const show = el => { if (!el) return; if (el.classList?.contains('modal')) { el.style.display='flex'; } else { el.classList?.remove('hidden'); }};
   const hide = el => { if (!el) return; if (el.classList?.contains('modal')) { el.style.display='none'; } else { el.classList?.add('hidden'); }};
 
@@ -454,10 +496,31 @@
     updateUI();
   }
   async function loadProfile(){
-    if (!state.user) { state.profile = null; return; }
-    const { data, error } = await sb.from('profiles').select('id, role, email, full_name').eq('id', state.user.id).maybeSingle();
-    state.profile = !error ? data : null;
+  state.profile = null;
+  if (!sb || !state.user) return;
+
+  const { data, error } = await sb
+    .from('profiles')
+    .select('id, role, email, full_name')
+    .eq('id', state.user.id)
+    .maybeSingle();
+
+  if (data) {
+    state.profile = data;
+    return;
   }
+
+  // Фолбэк: если профиль не читается, но email админский — считаем админом
+  if (state.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    state.profile = {
+      id: state.user.id,
+      role: 'admin',
+      email: state.user.email,
+      full_name: null
+    };
+  }
+}
+
   function updateUI(){
     if (state.user){
       hide(btnLogin); hide(btnRegister); show(btnLogout); hide(mainContent);
@@ -579,32 +642,77 @@
   }
 
   async function renderAdminClaims(){
-    const { data, error } = await sb.from('claims').select('id, created_at, fio, email, amount, status').order('created_at',{ascending:false});
-    if (error){ adminClaims.innerHTML = `<p>Ошибка загрузки: ${escapeHtml(error.message || 'Неизвестная ошибка.')}</p>`; return; }
-    if (!data?.length){ adminClaims.innerHTML = '<p>Пока нет заявлений.</p>'; return; }
-    adminClaims.innerHTML = `
-      <table>
-        <thead><tr><th>ID</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr></thead>
-        <tbody>
-          ${data.map(r => `<tr data-id="${r.id}">
-            <td>#${r.id}</td>
-            <td>${escapeHtml(r.fio)}<br><small>${escapeHtml(r.email)}</small></td>
-            <td>${fmtUSD(r.amount)}</td>
-            <td>${setStatusPill(r.status)}</td>
-            <td><button class="btn-link view-claim" data-id="${r.id}">Просмотр</button></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>`;
-    adminClaims.querySelectorAll('.view-claim').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const claimId = btn.dataset.id;
-        try {
-          const { data: claim, error } = await sb.from('claims').select('*, claim_files(path)').eq('id', claimId).single();
-          if (error) throw error;
-          await showAdminModal(claim);
-        } catch (err) { alert('Ошибка: ' + (err.message || 'Неизвестная ошибка')); }
-      });
-    });
+     const status = document.getElementById('admFilterStatus')?.value || '';
+  const q = (document.getElementById('admSearch')?.value || '').trim();
+
+  let query = sb.from('claims')
+    .select('id, created_at, fio, email, amount, status')
+    .order('created_at', { ascending: false });
+
+  if (status) query = query.eq('status', status);
+  if (q) query = query.or(`fio.ilike.%${q}%,email.ilike.%${q}%`);
+
+  const { data, error } = await query;
+  if (error){ adminClaims.innerHTML = `<p>Ошибка загрузки: ${escapeHtml(error.message)}</p>`; return; }
+  if (!data?.length){ adminClaims.innerHTML = '<p>Ничего не найдено.</p>'; return; }
+
+  adminClaims.innerHTML = `
+    <table>
+      <thead><tr><th>ID</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th>Создано</th><th>Действия</th></tr></thead>
+      <tbody>
+        ${data.map(r => `<tr>
+          <td>#${r.id}</td>
+          <td>${escapeHtml(r.fio)}<br><small>${escapeHtml(r.email)}</small></td>
+          <td>${fmtUSD(r.amount)}</td>
+          <td>${setStatusPill(r.status)}</td>
+          <td>${new Date(r.created_at).toLocaleString('ru-RU')}</td>
+          <td><button class="btn-link view-claim" data-id="${r.id}">Просмотр</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  adminClaims.querySelectorAll('.view-claim').forEach(b=>b.addEventListener('click', async () => {
+    const id = b.dataset.id;
+    const { data: claim, error } = await sb.from('claims').select('*, claim_files(path)').eq('id', id).single();
+    if (error) return alert(error.message);
+    await showAdminModal(claim);
+  }));
+}
+
+document.getElementById('admFilterStatus')?.addEventListener('change', renderAdminClaims);
+document.getElementById('admSearch')?.addEventListener('input', debounce(renderAdminClaims, 300));
+document.getElementById('reloadAdmin')?.addEventListener('click', renderAdminClaims);
+
+function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+
+
+async function exportAdminCsv(){
+  // выгружаем все (или текущую выборку) — для простоты повторим текущий запрос:
+  const status = document.getElementById('admFilterStatus')?.value || '';
+  const q = (document.getElementById('admSearch')?.value || '').trim();
+
+  let query = sb.from('claims')
+    .select('id,created_at,fio,email,amount,status', { head: false })
+    .order('created_at',{ ascending:false });
+
+  if (status) query = query.eq('status', status);
+  if (q) query = query.or(`fio.ilike.%${q}%,email.ilike.%${q}%`);
+
+  const { data, error } = await query;
+  if (error) return alert(error.message);
+
+  const rows = [
+    ['id','created_at','fio','email','amount','status'],
+    ...data.map(r => [r.id, r.created_at, r.fio, r.email, r.amount, r.status])
+  ];
+  const csv = rows.map(r => r.map(v => `"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n');
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `claims_${Date.now()}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
   }
 
   async function showAdminModal(claim){
